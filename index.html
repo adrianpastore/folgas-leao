@@ -158,14 +158,14 @@ import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-ap
 import{initializeFirestore,persistentLocalCache,doc,onSnapshot,setDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-/* ====== COLE AQUI A CONFIGURAÇÃO DO SEU PROJETO FIREBASE ====== */
+/* ====== Configuração do projeto Firebase: folgas-leao ====== */
 const firebaseConfig={
-  apiKey:"COLE_AQUI",
-  authDomain:"COLE_AQUI.firebaseapp.com",
-  projectId:"COLE_AQUI",
-  storageBucket:"COLE_AQUI.appspot.com",
-  messagingSenderId:"COLE_AQUI",
-  appId:"COLE_AQUI"
+  apiKey:"AIzaSyACcxNpV_2CBCeAPxZPDRoC90NvjE73k0A",
+  authDomain:"folgas-leao.firebaseapp.com",
+  projectId:"folgas-leao",
+  storageBucket:"folgas-leao.firebasestorage.app",
+  messagingSenderId:"949160114772",
+  appId:"1:949160114772:web:658cca8496f4580c9d8bc1"
 };
 /* =============================================================== */
 const fb=initializeApp(firebaseConfig);
@@ -242,7 +242,23 @@ function loginView(err){
   <label class="fl" for="lp">Senha</label><input id="lp" type="password" autocomplete="current-password">
   ${err?`<p class="note bad">${esc(err)}</p>`:''}
   <div class="row"><button class="btn pri" id="lb">Entrar</button></div></div>`;
-  const go=()=>{$('lb').disabled=true;signInWithEmailAndPassword(auth,$('le').value.trim(),$('lp').value).catch(()=>loginView('E-mail ou senha incorretos.'))};
+  const go=()=>{$('lb').disabled=true;const em=$('le').value.trim().toLowerCase();signInWithEmailAndPassword(auth,em,$('lp').value).catch(e=>{
+    const c=(e&&e.code)||'desconhecido';
+    const M={
+      'auth/invalid-credential':'E-mail ou senha incorretos.',
+      'auth/wrong-password':'Senha incorreta.',
+      'auth/user-not-found':'Não existe usuário com esse e-mail.',
+      'auth/invalid-email':'E-mail digitado em formato inválido.',
+      'auth/unauthorized-domain':'Este site não está nos domínios autorizados do Firebase (Authentication > Settings > Authorized domains).',
+      'auth/operation-not-allowed':'O login por E-mail/senha não está ativado no Firebase (Authentication > Sign-in method).',
+      'auth/configuration-not-found':'O Authentication não está configurado neste projeto. Ative E-mail/senha em Authentication > Sign-in method.',
+      'auth/api-key-not-valid.-please-pass-a-valid-api-key.':'A apiKey do firebaseConfig está errada.',
+      'auth/network-request-failed':'Sem conexão com o Firebase. Verifique a internet.',
+      'auth/too-many-requests':'Muitas tentativas. Espere alguns minutos e tente de novo.'
+    };
+    loginView((M[c]||'Não foi possível entrar.')+' (código: '+c+')');
+    $('le').value=em;
+  })};
   $('lb').onclick=go;$('lp').onkeydown=e=>{if(e.key==='Enter')go()};
 }
 onAuthStateChanged(auth,u=>{
