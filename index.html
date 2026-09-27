@@ -170,6 +170,9 @@ select,input{width:100%;border:1px solid var(--line);background:var(--paper);bor
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .tally{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:15px;margin-top:8px}
 .tally b{font-weight:600;text-align:right}
+.agrp{display:flex;justify-content:space-between;align-items:baseline;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.agrp b{font:700 17px/1 var(--cond);letter-spacing:.02em;color:var(--green)}
+.agrp small{color:var(--mut);font-size:13px}
 .fwchips{display:flex;flex-wrap:wrap;gap:6px}
 .fwchips .chip{min-height:40px;padding:6px 10px}
 </style>
@@ -221,6 +224,16 @@ const listNames=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' e '+a[a.leng
 const K='folgas_extras_v2';
 
 /* ---------- data ---------- */
+const DEF_AREAS=[
+  {id:'salao',n:'Salão',f:['Caixa','Copa','Salão','Gerência','Bebidas','Balança','Delivery']},
+  {id:'churrasqueira',n:'Churrasqueira',f:['Churrasqueiro','Passador','Auxiliar']},
+  {id:'cozinha',n:'Cozinha',f:['Auxiliar de Cozinheira','Cozinheiro','Saladeira']}];
+function guessArea(r,areas){r=(r||'').trim().toLowerCase();if(!r)return '';
+  for(const a of areas)if(a.f.some(f=>f.toLowerCase()===r))return a.id;
+  if(/gar[çc]|sistema|chefe|sal[ãa]o|bebida|caixa|copa|delivery|balan/.test(r))return areas.find(a=>a.id==='salao')?'salao':'';
+  if(/churras|passador/.test(r))return areas.find(a=>a.id==='churrasqueira')?'churrasqueira':'';
+  if(/cozinh|salad/.test(r))return areas.find(a=>a.id==='cozinha')?'cozinha':'';
+  return '';}
 function norm(s){
   s=s&&typeof s==='object'?s:{};
   const r={v:2,fixos:Array.isArray(s.fixos)?s.fixos:[],extras:Array.isArray(s.extras)?s.extras:[],
@@ -228,11 +241,13 @@ function norm(s){
   if(!r.cfg.seg){r.cfg.open=r.cfg.open.filter(i=>i!==1);r.cfg.seg=1;r._mig=1}
   if(!r.cfg.exc||typeof r.cfg.exc!=='object')r.cfg.exc={};
   r.fixos.forEach(p=>{if(!Array.isArray(p.fw))p.fw=[]});
+  if(!Array.isArray(r.cfg.areas)){r.cfg.areas=clone(DEF_AREAS);r._mig=1}
+  [...r.fixos,...r.extras].forEach(p=>{if(p.a===undefined){p.a=guessArea(p.r,r.cfg.areas);r._mig=1}});
   if(s.dom&&!s.dias){for(const k in s.dom){const o=s.dom[k]||{};r.dias[k]={off:[...(o.folgas||[])],on:[],cob:o.cob||{},ref:[]}}}
   return r;
 }
-let S=norm(JSON.parse($('state').textContent));
-try{const t=localStorage.getItem(K)||localStorage.getItem('folgas_extras_v1');if(t)S=norm(JSON.parse(t))}catch(e){}
+let S=norm(JSON.parse($('state').textContent));delete S._mig;
+try{const t=localStorage.getItem(K)||localStorage.getItem('folgas_extras_v1');if(t){S=norm(JSON.parse(t));delete S._mig}}catch(e){}
 
 const isOpen=k=>k in S.cfg.exc?!!S.cfg.exc[k]:S.cfg.open.includes(toD(k).getDay());
 const isExc=k=>k in S.cfg.exc;
@@ -244,11 +259,11 @@ function compOn(k){const r={};for(const d in S.dias){const c=S.dias[d].comp;if(c
 function sundayOffs(p,m){return monthDays(m).filter(k=>toD(k).getDay()===0&&isOpen(k)&&offList(k).includes(p))}
 function offList(k){const D=day(k),cp=compOn(k);return S.fixos.filter(p=>(isFixa(p,k)&&!(D.on||[]).includes(p.id))||(D.off||[]).includes(p.id)||cp[p.id])}
 const needsComp=k=>isExc(k)&&isOpen(k)&&!S.cfg.open.includes(toD(k).getDay());
-function compPend(k){if(!needsComp(k))return[];const c=day(k).comp||{},D=day(k);return S.fixos.filter(p=>!c[p.id]&&!(D.off||[]).includes(p.id))}
+function compPend(k){if(!needsComp(k))return[];const c=day(k).comp||{},D=day(k);return S.fixos.filter(vis).filter(p=>!c[p.id]&&!(D.off||[]).includes(p.id))}
 const okCob=c=>!!(c&&(c.v||(c.e&&c.s==='confirmado'&&extraById(c.e))));
 const okRef=r=>!!(r&&r.e&&r.s==='confirmado'&&extraById(r.e));
 function status(k){
-  const D=day(k),off=offList(k),ref=D.ref||[];
+  const D=day(k),off=offList(k).filter(vis),ref=(D.ref||[]).filter(r=>!areaF||!r.e||(extraById(r.e)&&extraById(r.e).a===areaF));
   const pendF=off.filter(p=>!okCob((D.cob||{})[p.id]));
   const pendR=ref.filter(r=>!okRef(r));
   const extras=[...off.map(p=>(D.cob||{})[p.id]).filter(c=>c&&c.e&&c.s==='confirmado'&&extraById(c.e)).map(c=>extraById(c.e)),...ref.filter(okRef).map(r=>extraById(r.e))];
@@ -257,6 +272,15 @@ function status(k){
 function monthName(m){const [y,mm]=m.split('-').map(Number),t=new Date(y,mm-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});return t.charAt(0).toUpperCase()+t.slice(1)}
 function weekLabel(w){const e=addDays(w,6),a=toD(w),b=toD(e);return a.getMonth()===b.getMonth()?`${a.getDate()} a ${dm(e)}`:`${dm(w)} a ${dm(e)}`}
 function pendingAhead(){let n=0;const t=iso(today());for(let i=0;i<14;i++){const k=addDays(t,i);if(isOpen(k))n+=status(k).pend}return n}
+const areaById=id=>S.cfg.areas.find(a=>a.id===id);
+const areaName=id=>{const a=areaById(id);return a?a.n:''};
+let areaF='';
+const vis=p=>!areaF||p.a===areaF;
+function areaBar(){if(S.cfg.areas.length<2)return '';return `<div class="fwchips" style="justify-content:center;margin:0 0 12px" role="group" aria-label="Filtrar por área">`+
+  [['','Todas'],...[...S.cfg.areas].sort((x,y)=>x.n.localeCompare(y.n,'pt-BR')).map(a=>[a.id,a.n])].map(([id,n])=>`<button class="chip${areaF===id?' on':''}" style="min-height:38px;padding:6px 12px" data-a="areaf" data-v="${id}" aria-pressed="${areaF===id}">${esc(n)}</button>`).join('')+'</div>'}
+function byArea(L){const col=(x,y)=>x.localeCompare(y,'pt-BR',{sensitivity:'base'});
+  const g=[...[...S.cfg.areas].sort((x,y)=>col(x.n,y.n)).map(a=>[a.id,a.n]),['','Sem área']];
+  return g.map(([id,n])=>[n,L.filter(p=>id===''?!areaById(p.a):p.a===id).sort((x,y)=>col(x.n,y.n))]).filter(x=>x[1].length)}
 function roles(){const set=new Set(['Garçom','Sistema','Churrasqueiro','Cozinheiro','Saladeiro','Caixa','Copa','Delivery','Chefe de Salão']);[...S.fixos,...S.extras].forEach(p=>p.r&&set.add(p.r));return[...set]}
 
 /* ---------- view state ---------- */
@@ -265,13 +289,15 @@ let tab=ui.tab||'week';
 let wk=ui.wk||monday(iso(today()));
 let mo=ui.mo||iso(today()).slice(0,7);
 let open=ui.open!==undefined?ui.open:iso(today());
+areaF=ui.af||'';
+const openAreas=new Set(ui.oa||[]);
 let teamSub=ui.sub||'equipe',editing=null,adding=false,addKind='fixo',imgUrl='',imgBlob=null,needsRender=false;
 
 /* ---------- sync (Firestore) ---------- */
 let ref=doc(fdb,'app','estado'),me=uid(),lastAt=0,wTimer=null,unsub=null,user=null;
 function setSync(k){const el=$('sync');const t={ok:'Sincronizado',saving:'Salvando…',local:'Offline: salvo no aparelho',err:'Erro ao salvar'}[k];el.className='sync '+k;el.querySelector('span').textContent=t}
 function saveLocal(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
-function persistUI(){try{sessionStorage.setItem('ui3',JSON.stringify({tab,wk,mo,open,sub:teamSub}))}catch(e){}}
+function persistUI(){try{sessionStorage.setItem('ui3',JSON.stringify({tab,wk,mo,open,sub:teamSub,af:areaF,oa:[...openAreas]}))}catch(e){}}
 function push(){
   if(!user)return;clearTimeout(wTimer);setSync(navigator.onLine?'saving':'local');
   wTimer=setTimeout(()=>{lastAt=Date.now();
@@ -340,7 +366,7 @@ function renderTabs(){
 function vWeek(){
   if(!S.fixos.length)return `<div class="empty"><p>Para começar, cadastre a equipe.</p><button class="btn pri" data-a="tab" data-id="team">Cadastrar equipe</button></div>`;
   const t=iso(today());
-  let h=`<div class="mnav"><button class="ib" data-a="wprev" aria-label="Semana anterior">‹</button><h2 style="font-size:21px">${weekLabel(wk)}</h2><button class="ib" data-a="wnext" aria-label="Próxima semana">›</button></div>`;
+  let h=`<div class="mnav"><button class="ib" data-a="wprev" aria-label="Semana anterior">‹</button><h2 style="font-size:21px">${weekLabel(wk)}</h2><button class="ib" data-a="wnext" aria-label="Próxima semana">›</button></div>`+areaBar();
   const days=[...Array(7)].map((_,i)=>addDays(wk,i));
   const pd=days.filter(k=>isOpen(k)&&k>=t&&status(k).pend).length;
   h+=`${wk!==monday(t)?`<div style="text-align:center;margin-bottom:6px"><button class="btn ghost" data-a="thisweek" style="min-height:36px;padding:4px 12px">Voltar para esta semana</button></div>`:''}<p class="lead">${pd?`${pd} ${pd===1?'dia precisa':'dias precisam'} de atenção`:'Toque num dia para marcar folgas e extras'}</p>`;
@@ -364,8 +390,8 @@ function waBtn(ex,k,motivo,st){
   const msg=`Oi ${ex.n}! Tudo bem? Precisamos de você na Churrascaria Leão do Parque na ${longDay(k)}${motivo}. Consegue vir?`;
   return `<div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}">Chamar ${esc(ex.n)} no WhatsApp</a>${pix}</div>`;
 }
-function extraSelect(k,key,cur,used,role,rec,label){
-  const opts=[...S.extras].sort((a,b)=>same(b.r,role)-same(a.r,role)||a.n.localeCompare(b.n));
+function extraSelect(k,key,cur,used,role,rec,label,pa){
+  const ar=pa||areaF;const opts=[...S.extras].sort((a,b)=>same(b.r,role)-same(a.r,role)||(b.a===ar&&!!ar)-(a.a===ar&&!!ar)||a.n.localeCompare(b.n));
   return `<label class="fl" for="ex-${k}-${key}">${label}</label><select id="ex-${k}-${key}" data-a="ext" data-key="${key}" data-d="${k}"><option value="">Escolher extra…</option>`+
     opts.map(e=>{const busy=used.has(e.id)&&cur!==e.id,r=(rec||[]).includes(e.id)&&cur!==e.id;
       return `<option value="${e.id}"${cur===e.id?' selected':''}${busy?' disabled':''}>${esc(e.n)}${e.r?' ('+esc(e.r)+')':''}${role&&same(e.r,role)?' ★ mesma função':''}${busy?' – já escalado':''}${r?' – recusou':''}</option>`}).join('')+'</select>';
@@ -385,22 +411,25 @@ function dayBody(k){
     const nPend=compPend(k).length;
     h+=`<div class="cov" style="margin-top:12px;border-color:var(--warn);background:var(--warn-2)"><div class="step" style="margin-top:0">Folga no lugar da ${WD[toD(k).getDay()].toLowerCase()}</div>
       <p class="hint">A casa abre fora do normal e todos perdem a folga deste dia. Escolha outro dia para cada um folgar.${nPend?` <b style="color:var(--warn)">Faltam ${nPend}.</b>`:''}</p>`+
-      S.fixos.map(p=>{
+      byArea(S.fixos.filter(vis)).flatMap(x=>x[1]).map(p=>{
         if((D.off||[]).includes(p.id))return `<div style="margin-top:10px"><b>${esc(p.n)}</b> <span class="hint">folga neste dia, não precisa compensar</span></div>`;
         return `<label class="fl" for="cp-${k}-${p.id}"><b style="color:var(--ink);font-size:15px">${esc(p.n)}</b> ${esc(p.r||'')}</label><select id="cp-${k}-${p.id}" data-a="comp" data-id="${p.id}" data-d="${k}"><option value="">Escolher dia da folga…</option>`+
           opts.map(d=>{const n=offList(d).filter(x=>x.id!==p.id).length;return `<option value="${d}"${cmp[p.id]===d?' selected':''}>${WD[toD(d).getDay()]}, ${+d.slice(8)}/${d.slice(5,7)}${n?` (${n} já de folga)`:''}</option>`}).join('')+'</select>';
       }).join('')+'</div>';
   }
   const cpOn=compOn(k);
-  h+=`<div class="step"><span>1</span>Quem folga neste dia?</div><p class="hint">Toque no nome para marcar ou tirar a folga.</p><div class="chips">`+
-    S.fixos.map(p=>{const on=off.includes(p);const fixa=isFixa(p,k);
+  const chip=p=>{const on=off.includes(p);const fixa=isFixa(p,k);
       const other=isSun&&!on?sundayOffs(p,k.slice(0,7)):[];
       const sub=cpOn[p.id]?`folga no lugar de ${WS[toD(cpOn[p.id]).getDay()].toLowerCase()} ${+cpOn[p.id].slice(8)}`:other.length?`já folga dia ${+other[0].slice(8)}`:fixa?(on?'folga fixa':'trocou a folga fixa'):(p.r||'');
-      return `<button class="chip${on?' on':''}${other.length?' dis':''}" data-a="fol" data-id="${p.id}" data-d="${k}" aria-pressed="${on}"${other.length?' aria-disabled="true"':''}>${esc(p.n)}<small>${esc(sub)}</small></button>`}).join('')+'</div>'+
-    (isSun?(()=>{const sem=S.fixos.filter(p=>!sundayOffs(p,k.slice(0,7)).length);return `<p class="hint" style="margin-top:8px">Domingo: cada um folga 1 por mês. ${sem.length?'Ainda sem domingo em '+monthName(k.slice(0,7)).split(' ')[0].toLowerCase()+': '+listNames(sem.map(p=>esc(p.n)))+'.':'Todos já têm o domingo do mês.'}</p>`})():'');
+      return `<button class="chip${on?' on':''}${other.length?' dis':''}" data-a="fol" data-id="${p.id}" data-d="${k}" aria-pressed="${on}"${other.length?' aria-disabled="true"':''}>${esc(p.n)}<small>${esc(sub)}</small></button>`};
+  const grp=byArea(S.fixos.filter(vis));
+  h+=`<div class="step"><span>1</span>Quem folga neste dia?</div><p class="hint">Toque no nome para marcar ou tirar a folga.</p>`+
+    grp.map(([n,items])=>{const nOff=items.filter(p=>off.includes(p)).length;
+      return `${grp.length>1?`<div class="agrp"><b>${esc(n)}</b><small>${nOff?nOff+' de folga':'todos trabalham'}</small></div>`:''}<div class="chips">${items.map(chip).join('')}</div>`}).join('')+
+    (isSun?(()=>{const sem=S.fixos.filter(vis).filter(p=>!sundayOffs(p,k.slice(0,7)).length);return `<p class="hint" style="margin-top:8px">Domingo: cada um folga 1 por mês. ${sem.length?'Ainda sem domingo em '+monthName(k.slice(0,7)).split(' ')[0].toLowerCase()+': '+listNames(sem.map(p=>esc(p.n)))+'.':'Todos já têm o domingo do mês.'}</p>`})():'');
   if(off.length){
     h+=`<div class="step"><span>2</span>Quem cobre cada folga?</div>`;
-    h+=off.map(p=>{
+    h+=byArea(off).flatMap(x=>x[1]).map(p=>{
       const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v;
       let st;
       if(vend)st='<span class="st ok">Vendeu a folga</span>';
@@ -408,11 +437,11 @@ function dayBody(k){
       else if(ex&&c.s==='chamado')st=`<span class="st warn">Esperando ${esc(ex.n)}</span>`;
       else if(ex&&c.s==='recusou')st='<span class="st bad">Precisa de outro extra</span>';
       else st='<span class="st bad">Sem cobertura</span>';
-      let x=`<div class="cov"><div class="cov-h"><div><b>${esc(p.n)}</b><span class="role">${esc(p.r||'')}</span></div>${st}</div>
+      let x=`<div class="cov"><div class="cov-h"><div><b>${esc(p.n)}</b><span class="role">${esc([areaName(p.a),p.r].filter(Boolean).join(' · '))}</span></div>${st}</div>
         <div class="seg" role="group"><button class="${!vend?'on':''}" data-a="mode" data-v="extra" data-key="${p.id}" data-d="${k}">Chamar extra</button><button class="${vend?'on':''}" data-a="mode" data-v="vend" data-key="${p.id}" data-d="${k}">Vendeu a folga</button></div>`;
       if(vend)return x+`<p class="note ok">${esc(p.n)} vem trabalhar normalmente.</p></div>`;
       if(!S.extras.length)return x+`<p class="note">Nenhum extra cadastrado ainda.</p><div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div></div>`;
-      x+=extraSelect(k,p.id,c.e,used,p.r,c.rec,`Extra para o lugar de ${esc(p.n)}`);
+      x+=extraSelect(k,p.id,c.e,used,p.r,c.rec,`Extra para o lugar de ${esc(p.n)}`,p.a);
       if(ex){x+=statusSeg(k,p.id,c,ex);if(c.s!=='recusou')x+=waBtn(ex,k,`, no lugar de ${p.n}${p.r?' ('+p.r+')':''}`,c.s)}
       return x+'</div>';
     }).join('');
@@ -427,7 +456,7 @@ function dayBody(k){
     return x+`<div class="row"><button class="btn danger" data-a="rmref" data-key="r:${r.id}" data-d="${k}">Tirar este reforço</button></div></div>`;
   }).join('');
   h+=S.extras.length?`<button class="btn addref" data-a="addref" data-d="${k}">+ Chamar extra de reforço</button>`:`<div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div>`;
-  const w=S.fixos.filter(p=>!off.includes(p));
+  const w=S.fixos.filter(vis).filter(p=>!off.includes(p));
   if(w.length)h+=`<p class="work">Trabalham: ${listNames(w.map(p=>esc(p.n)))}.</p>`;
   h+=`<div class="row" style="margin-top:16px;border-top:1px dashed var(--line);padding-top:10px">${isExc(k)?`<button class="btn ghost" data-a="exc" data-d="${k}" data-v="reset">Desfazer abertura especial</button>`:`<button class="btn ghost" data-a="exc" data-d="${k}" data-v="close">Fechar neste dia (feriado)</button>`}</div>`;
   return h;
@@ -437,7 +466,7 @@ function dayBody(k){
 function monthDays(m){const [y,mm]=m.split('-').map(Number),r=[],x=new Date(y,mm-1,1);while(x.getMonth()===mm-1){r.push(iso(x));x.setDate(x.getDate()+1)}return r}
 function vMonth(){
   const t=iso(today()),days=monthDays(mo),lead=(toD(days[0]).getDay()+6)%7;
-  let h=`<div class="mnav"><button class="ib" data-a="mprev" aria-label="Mês anterior">‹</button><h2>${monthName(mo)}</h2><button class="ib" data-a="mnext" aria-label="Próximo mês">›</button></div>`;
+  let h=`<div class="mnav"><button class="ib" data-a="mprev" aria-label="Mês anterior">‹</button><h2>${monthName(mo)}</h2><button class="ib" data-a="mnext" aria-label="Próximo mês">›</button></div>`+areaBar();
   h+=`<div class="cal"><div class="cal-g">`+ORDER.map(i=>`<div class="cal-w">${WS[i]}</div>`).join('');
   for(let i=0;i<lead;i++)h+='<div class="cal-d x"></div>';
   days.forEach(k=>{
@@ -451,8 +480,8 @@ function vMonth(){
   // tally
   const cnt={},ext={};days.forEach(k=>{if(!isOpen(k))return;const s=status(k);s.off.forEach(p=>cnt[p.id]=(cnt[p.id]||0)+1);s.extras.forEach(e=>ext[e.id]=(ext[e.id]||0)+1)});
   h+=`<div class="card"><h3>Resumo do mês</h3><p class="hint">Folgas de cada fixo (com o domingo do mês) e dias trabalhados pelos extras.</p><div class="tally">`+
-    S.fixos.map(p=>{const sd=sundayOffs(p,mo);return `<span>${esc(p.n)}<small style="display:block;color:${sd.length?'var(--mut)':'var(--warn)'};font-size:13px">${sd.length?'Domingo: dia '+(+sd[0].slice(8)):'Ainda sem folga de domingo'}</small></span><b>${cnt[p.id]||0} ${(cnt[p.id]||0)===1?'folga':'folgas'}</b>`}).join('')+
-    S.extras.filter(e=>ext[e.id]).map(e=>`<span>${esc(e.n)} <small style="color:var(--mut)">(extra)</small></span><b>${ext[e.id]} ${ext[e.id]===1?'dia':'dias'}</b>`).join('')+`</div></div>`;
+    S.fixos.filter(vis).map(p=>{const sd=sundayOffs(p,mo);return `<span>${esc(p.n)}<small style="display:block;color:${sd.length?'var(--mut)':'var(--warn)'};font-size:13px">${sd.length?'Domingo: dia '+(+sd[0].slice(8)):'Ainda sem folga de domingo'}</small></span><b>${cnt[p.id]||0} ${(cnt[p.id]||0)===1?'folga':'folgas'}</b>`}).join('')+
+    S.extras.filter(vis).filter(e=>ext[e.id]).map(e=>`<span>${esc(e.n)} <small style="color:var(--mut)">(extra)</small></span><b>${ext[e.id]} ${ext[e.id]===1?'dia':'dias'}</b>`).join('')+`</div></div>`;
   h+=`<div class="card"><h3>Calendário para o grupo</h3>${imgUrl?`<img class="gi" src="${imgUrl}" alt="Calendário de folgas de ${monthName(mo)}"><div class="row"><button class="btn pri" data-a="dl">Salvar imagem</button>${navigator.canShare?'<button class="btn" data-a="shimg">Compartilhar</button>':''}</div><p class="hint" style="margin-top:8px">No celular, dá para tocar e segurar a imagem para salvar.</p>`:`<p class="hint">Gera uma imagem do mês com os nomes de quem folga e dos extras.</p><div class="row"><button class="btn pri" data-a="gen">Criar imagem do mês</button></div>`}</div>`;
   const txt=monthText();
   h+=`<div class="card"><h3>Mensagem do mês</h3><pre class="pre">${esc(txt)}</pre><div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">Enviar no WhatsApp</a><button class="btn" data-a="copy" data-v="month">Copiar texto</button></div></div>`;
@@ -462,8 +491,8 @@ function linesFor(k){const {D,off,ref}=status(k),L=[];
   const cp=compOn(k);off.forEach(p=>{L.push([p.n+(cp[p.id]?' (compensa '+(+cp[p.id].slice(8))+'/'+cp[p.id].slice(5,7)+')':''),0]);const c=(D.cob||{})[p.id];if(okCob(c)&&c.e)L.push(['extra: '+extraById(c.e).n,1]);if(c&&c.v)L.push(['vendeu a folga',1])});
   ref.filter(okRef).forEach(r=>L.push(['reforço: '+extraById(r.e).n,1]));return L}
 function textFor(days){return days.filter(k=>isOpen(k)&&linesFor(k).length).map(k=>{const d=toD(k);return `*${WS[d.getDay()]} ${k.slice(8)}/${k.slice(5,7)}*\n`+linesFor(k).map(([t,s])=>s?'   '+t:'• '+t+' (folga)').join('\n')}).join('\n\n')}
-function weekText(){const b=textFor([...Array(7)].map((_,i)=>addDays(wk,i)));return `*Escala da semana – ${weekLabel(wk)}*\nChurrascaria Leão do Parque\n\n`+(b||'Sem folgas nem extras nesta semana.')}
-function monthText(){const b=textFor(monthDays(mo));return `*Folgas e extras – ${monthName(mo)}*\nChurrascaria Leão do Parque\n\n`+(b||'Sem folgas nem extras neste mês.')}
+function weekText(){const b=textFor([...Array(7)].map((_,i)=>addDays(wk,i)));return `*Escala da semana – ${weekLabel(wk)}*\nChurrascaria Leão do Parque${areaF?' – '+areaName(areaF):''}\n\n`+(b||'Sem folgas nem extras nesta semana.')}
+function monthText(){const b=textFor(monthDays(mo));return `*Folgas e extras – ${monthName(mo)}*\nChurrascaria Leão do Parque${areaF?' – '+areaName(areaF):''}\n\n`+(b||'Sem folgas nem extras neste mês.')}
 function drawImg(){
   const days=monthDays(mo),lead=(toD(days[0]).getDay()+6)%7,rows=Math.ceil((lead+days.length)/7);
   const W=1080,P=30,G=4,CW=(W-2*P-6*G)/7;
@@ -473,7 +502,7 @@ function drawImg(){
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.textBaseline='top';
   x.fillStyle='#1f4a33';x.fillRect(0,0,W,HB);x.fillStyle='#8e1f2f';x.fillRect(0,HB,W,10);
   x.fillStyle='#fff';x.font='700 58px '+FC;x.fillText('Churrascaria Leão do Parque',P,34);
-  x.globalAlpha=.85;x.font='30px '+F;x.fillText('Folgas e extras, '+monthName(mo),P,102);x.globalAlpha=1;
+  x.globalAlpha=.85;x.font='30px '+F;x.fillText('Folgas e extras, '+monthName(mo)+(areaF?' – '+areaName(areaF):''),P,102);x.globalAlpha=1;
   let y0=HB+24;
   ORDER.forEach((wd,c)=>{x.fillStyle='#5b695f';x.font='600 22px '+F;x.fillText(WS[wd],P+c*(CW+G)+8,y0+6)});
   y0+=40;
@@ -502,6 +531,10 @@ async function shareImg(){if(!imgBlob)return;const file=new File([imgBlob],'folg
 
 /* ---------- equipe ---------- */
 function fwChips(sel){return `<div class="fwchips">`+ORDER.filter(i=>i!==0).map(i=>`<button type="button" class="chip${sel.includes(i)?' on':''}" data-a="fw" data-v="${i}" aria-pressed="${sel.includes(i)}">${WS[i]}</button>`).join('')+'</div>'}
+function funcOpts(aid,cur){const a=areaById(aid),f=a?[...a.f]:[];if(cur&&!f.includes(cur))f.unshift(cur);
+  return `<option value="">${a?'Escolher função…':'Escolha a área primeiro'}</option>`+f.map(x=>`<option${x===cur?' selected':''}>${esc(x)}</option>`).join('')}
+function areaFields(pre,p){return `<label class="fl" for="${pre}a">Área</label><select id="${pre}a" data-a="areasel" data-pre="${pre}"><option value="">Escolher área…</option>${S.cfg.areas.map(a=>`<option value="${a.id}"${p.a===a.id?' selected':''}>${esc(a.n)}</option>`).join('')}</select>
+  <label class="fl" for="${pre}r">Função</label><select id="${pre}r">${funcOpts(p.a,p.r||'')}</select>`}
 function vTeam(){
   const isX=teamSub==='extras';
   let h=`<datalist id="fl">${roles().map(r=>`<option>${esc(r)}</option>`).join('')}</datalist>`;
@@ -509,23 +542,40 @@ function vTeam(){
   if(adding){
     h+=`<div class="addbox"><div class="step" style="margin-top:0">${isX?'Novo extra':'Novo funcionário'}</div>
       <label class="fl" for="nn">Nome</label><input id="nn" autocomplete="off">
-      <label class="fl" for="nr">Função</label><input id="nr" list="fl" autocomplete="off">
+      ${areaFields('n',{a:areaF||(S.cfg.areas[0]||{}).id||'',r:''})}
       ${isX?'<label class="fl" for="nt">WhatsApp com DDD</label><input id="nt" type="tel" inputmode="tel" placeholder="53 98415-3816"><label class="fl" for="np">Chave Pix</label><input id="np" autocomplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória">':`<label class="fl">Folga fixa toda semana (se tiver)</label>${fwChips([])}`}
       <div class="row"><button class="btn pri" data-a="add">Adicionar</button><button class="btn ghost" data-a="cancel">Cancelar</button></div></div>`;
   }else h+=`<div class="row" style="margin-top:0;margin-bottom:12px"><button class="btn pri" data-a="goadd" data-v="${isX?'extra':'fixo'}">${isX?'+ Adicionar extra':'+ Adicionar funcionário'}</button></div>`;
+  const grouped=(L,kind)=>{
+    const col=(x,y)=>x.localeCompare(y,'pt-BR',{sensitivity:'base'});
+    const g=[...[...S.cfg.areas].sort((x,y)=>col(x.n,y.n)).map(a=>[a.id,a.n]),['','Sem área']];
+    return g.map(([id,n])=>{
+      const items=L.filter(p=>id===''?!areaById(p.a):p.a===id).sort((x,y)=>col(x.n,y.n));
+      if(!items.length)return '';
+      const key=kind+':'+id,isO=openAreas.has(key)||items.some(p=>p.id===editing);
+      return `<section class="sun${isO?' open':''}" style="margin-bottom:10px"><button class="sun-h" data-a="tgarea" data-id="${key}" aria-expanded="${isO}" style="grid-template-columns:1fr auto auto">
+        <span class="dmeta"><b style="font:700 21px/1.1 var(--cond)">${esc(n)}</b><small>${items.map(p=>esc(p.n)).join(', ')}</small></span>
+        <span class="pill none">${items.length} ${items.length===1?'pessoa':'pessoas'}</span><span aria-hidden="true" style="color:var(--mut);font-size:18px">${isO?'▴':'▾'}</span></button>
+        ${isO?`<div class="sun-b" style="padding-top:10px">${items.map(p=>row(p,kind)).join('')}</div>`:''}</section>`;
+    }).join('');
+  };
   const row=(p,kind)=>{
     const meta=kind==='fixo'?`${esc(p.r||'Sem função')}${(p.fw||[]).filter(i=>i).length?', folga fixa: '+ORDER.filter(i=>i&&p.fw.includes(i)).map(i=>WS[i].toLowerCase()).join(', '):''}`:`${esc(p.r||'Sem função')}${p.t?', '+esc(p.t):''}${p.pix?'<br>Pix: '+esc(p.pix):'<br><span style="color:var(--warn)">Sem chave Pix</span>'}`;
     let x=`<div class="person"><button data-a="edit" data-id="${p.id}" aria-expanded="${editing===p.id}"><span><b>${esc(p.n)}</b><span class="pm">${meta}</span></span><span class="edit">${editing===p.id?'Fechar':'Editar'}</span></button>`;
     if(kind==='extra'&&p.pix&&editing!==p.id)x+=`<div style="padding:0 14px 12px"><button class="btn" data-a="copypix" data-id="${p.id}">Copiar Pix</button></div>`;
-    if(editing===p.id)x+=`<div class="pform"><label class="fl" for="en">Nome</label><input id="en" value="${esc(p.n)}"><label class="fl" for="er">Função</label><input id="er" list="fl" value="${esc(p.r||'')}">${kind==='extra'?`<label class="fl" for="et">WhatsApp com DDD</label><input id="et" type="tel" inputmode="tel" value="${esc(p.t||'')}"><label class="fl" for="ep">Chave Pix</label><input id="ep" autocomplete="off" value="${esc(p.pix||'')}" placeholder="CPF, telefone, e-mail ou chave aleatória">`:`<label class="fl">Folga fixa toda semana</label>${fwChips(p.fw||[])}<p class="hint" style="margin-top:6px">Aparece automaticamente em todas as semanas. Dá para trocar dia a dia. A folga de domingo é marcada no próprio dia (1 por mês).</p>`}
+    if(editing===p.id)x+=`<div class="pform"><label class="fl" for="en">Nome</label><input id="en" value="${esc(p.n)}">${areaFields('e',p)}${kind==='extra'?`<label class="fl" for="et">WhatsApp com DDD</label><input id="et" type="tel" inputmode="tel" value="${esc(p.t||'')}"><label class="fl" for="ep">Chave Pix</label><input id="ep" autocomplete="off" value="${esc(p.pix||'')}" placeholder="CPF, telefone, e-mail ou chave aleatória">`:`<label class="fl">Folga fixa toda semana</label>${fwChips(p.fw||[])}<p class="hint" style="margin-top:6px">Aparece automaticamente em todas as semanas. Dá para trocar dia a dia. A folga de domingo é marcada no próprio dia (1 por mês).</p>`}
       <div class="row"><button class="btn pri" data-a="savep" data-id="${p.id}" data-v="${kind}">Salvar</button><button class="btn danger" data-a="rm" data-id="${p.id}" data-v="${kind}">Remover ${esc(p.n)}</button></div></div>`;
     return x+'</div>';
   };
   if(!isX){
-    h+=S.fixos.length?S.fixos.map(p=>row(p,'fixo')).join(''):'<div class="empty">Ninguém cadastrado ainda.</div>';
+    h+=S.fixos.length?grouped(S.fixos,'fixo'):'<div class="empty">Ninguém cadastrado ainda.</div>';
     h+=`<div class="sec"><h2>Dias em que a casa abre</h2></div><div class="card"><p class="hint">Dias desmarcados aparecem como fechados.</p><div class="fwchips">`+ORDER.map(i=>{const on=S.cfg.open.includes(i);return `<button class="chip${on?' on':''}" data-a="openday" data-v="${i}" aria-pressed="${on}">${WS[i]}</button>`}).join('')+`</div></div>`;
+    h+=`<div class="sec"><h2>Áreas e funções</h2></div>`+S.cfg.areas.map(a=>`<div class="card"><h3>${esc(a.n)}</h3><div class="fwchips" style="margin-top:8px">`+
+      a.f.map((f,i)=>`<span class="chip" style="display:inline-flex;align-items:center;gap:6px;min-height:38px">${esc(f)}<button class="btn danger" style="min-height:28px;padding:0 4px" data-a="rmfunc" data-id="${a.id}" data-v="${i}" aria-label="Remover ${esc(f)}">×</button></span>`).join('')+
+      `</div><div class="row"><input id="nf-${a.id}" placeholder="Nova função" style="flex:1;min-width:0"><button class="btn" data-a="addfunc" data-id="${a.id}">Adicionar</button></div></div>`).join('')+
+      `<div class="card"><div class="row" style="margin-top:0"><input id="narea" placeholder="Nova área (ex.: Limpeza)" style="flex:1;min-width:0"><button class="btn" data-a="addarea">Criar área</button></div></div>`;
   }else{
-    h+=S.extras.length?S.extras.map(p=>row(p,'extra')).join(''):'<div class="empty">Cadastre os extras para poder chamá-los pelo WhatsApp e pagar pelo Pix.</div>';
+    h+=S.extras.length?grouped(S.extras,'extra'):'<div class="empty">Cadastre os extras para poder chamá-los pelo WhatsApp e pagar pelo Pix.</div>';
   }
   h+=`<div class="row" style="margin-top:24px"><span class="hint" style="margin:0">Conectado como ${esc(user&&user.email||'')}</span><button class="btn ghost" data-a="logout">Sair</button></div>`;
   return h;
@@ -559,6 +609,11 @@ document.addEventListener('click',ev=>{
   else if(a==='st'){const D=mday(k),c=covObj(D,key);if(!c)return;c.s=v;if(v==='recusou')c.rec=[...new Set([...(c.rec||[]),c.e])];commit()}
   else if(a==='addref'){mday(k).ref.push({id:uid(),e:'',s:'',rec:[]});commit()}
   else if(a==='rmref'){const D=mday(k),snap=clone(S);D.ref=D.ref.filter(r=>r.id!==key.slice(2));commit();toast('Reforço removido',snap)}
+  else if(a==='tgarea'){openAreas.has(id)?openAreas.delete(id):openAreas.add(id);render()}
+  else if(a==='areaf'){areaF=v;imgUrl='';imgBlob=null;render()}
+  else if(a==='addfunc'){const ar=areaById(id),inp=$('nf-'+id),f=inp.value.trim();if(!f){inp.focus();return}if(!ar.f.some(x=>same(x,f)))ar.f.push(f);commit();toast(f+' adicionada em '+ar.n)}
+  else if(a==='rmfunc'){const ar=areaById(id),snap=clone(S),f=ar.f[+v];ar.f.splice(+v,1);commit();toast(f+' removida',snap)}
+  else if(a==='addarea'){const n=$('narea').value.trim();if(!n){$('narea').focus();return}S.cfg.areas.push({id:uid(),n,f:[]});commit();toast('Área '+n+' criada')}
   else if(a==='sub'){teamSub=v;adding=false;editing=null;render()}
   else if(a==='copypix'){const e=extraById(id);if(e&&e.pix)(navigator.clipboard?navigator.clipboard.writeText(e.pix):Promise.reject()).then(()=>toast('Pix de '+e.n+' copiado')).catch(()=>toast('Pix: '+e.pix))}
   else if(a==='goadd'){tab='team';adding=true;addKind=v||'fixo';teamSub=addKind==='extra'?'extras':'equipe';editing=null;render();window.scrollTo(0,0);setTimeout(()=>$('nn')&&$('nn').focus(),0)}
@@ -567,13 +622,14 @@ document.addEventListener('click',ev=>{
   else if(a==='fw'){const on=!b.classList.contains('on');b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)}
   else if(a==='openday'){const i=+v;S.cfg.open=S.cfg.open.includes(i)?S.cfg.open.filter(x=>x!==i):[...S.cfg.open,i];commit()}
   else if(a==='add'){const n=$('nn').value.trim();if(!n){$('nn').focus();toast('Escreva o nome');return}
-    const r=$('nr').value.trim(),box=b.closest('.addbox');
-    if(addKind==='fixo')S.fixos.push({id:uid(),n,r,fw:[...box.querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v)});
-    else S.extras.push({id:uid(),n,r,t:$('nt')?$('nt').value.trim():'',pix:$('np')?$('np').value.trim():''});
+    const r=$('nr').value.trim(),ar=$('na').value,box=b.closest('.addbox');
+    if(!ar){$('na').focus();toast('Escolha a área');return}
+    if(addKind==='fixo')S.fixos.push({id:uid(),n,r,a:ar,fw:[...box.querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v)});
+    else S.extras.push({id:uid(),n,r,a:ar,t:$('nt')?$('nt').value.trim():'',pix:$('np')?$('np').value.trim():''});
     adding=false;commit();toast(n+' adicionado')}
   else if(a==='edit'){editing=editing===id?null:id;adding=false;render()}
   else if(a==='savep'){const L=v==='fixo'?S.fixos:S.extras,p=L.find(x=>x.id===id);if(!p)return;const n=$('en').value.trim();if(!n){$('en').focus();return}
-    p.n=n;p.r=$('er').value.trim();if(v==='extra'){p.t=$('et').value.trim();p.pix=$('ep').value.trim()}else p.fw=[...b.closest('.pform').querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v);
+    p.n=n;p.r=$('er').value.trim();p.a=$('ea').value;if(v==='extra'){p.t=$('et').value.trim();p.pix=$('ep').value.trim()}else p.fw=[...b.closest('.pform').querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v);
     editing=null;commit();toast('Alterações salvas')}
   else if(a==='rm'){const snap=clone(S),L=v==='fixo'?'fixos':'extras',p=S[L].find(x=>x.id===id);S[L]=S[L].filter(x=>x.id!==id);editing=null;commit();toast((p?p.n:'Pessoa')+' removido',snap)}
   else if(a==='logout')signOut(auth);
@@ -583,6 +639,8 @@ document.addEventListener('click',ev=>{
   else if(a==='copy'){const t=v==='week'?weekText():monthText();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto copiado')).catch(()=>toast('Selecione o texto e copie manualmente'))}
 });
 document.addEventListener('change',ev=>{
+  const as=ev.target.closest('select[data-a="areasel"]');
+  if(as){const r=$(as.dataset.pre+'r');r.innerHTML=funcOpts(as.value,'');return}
   const cs=ev.target.closest('select[data-a="comp"]');
   if(cs){const D=mday(cs.dataset.d);D.comp=D.comp||{};const old=D.comp[cs.dataset.id];if(old&&S.dias[old]&&S.dias[old].cob)delete S.dias[old].cob[cs.dataset.id];
     if(cs.value)D.comp[cs.dataset.id]=cs.value;else delete D.comp[cs.dataset.id];commit();return}
