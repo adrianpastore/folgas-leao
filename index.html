@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Folgas de domingo – Leão do Parque</title>
+<title>Folgas e extras – Leão do Parque</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -141,17 +141,47 @@ select,input{width:100%;border:1px solid var(--line);background:var(--paper);bor
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 14px;display:flex;gap:14px;align-items:center;font-size:15px;z-index:6;max-width:calc(100% - 28px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .toast button{background:transparent;border:0;color:inherit;font-weight:700;text-decoration:underline;padding:4px}
 .toast[hidden]{display:none}
+/* v2 */
+.dname{font:700 15px/1 var(--cond);color:var(--wine);text-transform:uppercase;letter-spacing:.04em;display:block;text-align:center}
+.dcol{min-width:60px;text-align:center}
+.dcol .dnum{min-width:0;display:block}
+.sun.closed{opacity:.75}
+.sun.closed .dmeta,.sun.closed .dcol{opacity:.6}
+.chip.dis{opacity:.5;border-style:dashed}
+.sun.closed .sun-h{cursor:default}
+.fixa{font-size:11px;font-weight:600;opacity:.85}
+.refbox{border:1.5px dashed var(--line)}
+.addref{margin-top:10px}
+.cal{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:8px;margin-bottom:12px}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-w{font-size:12px;font-weight:600;color:var(--mut);text-align:center;padding:4px 0}
+.cal-d{all:unset;box-sizing:border-box;cursor:pointer;min-height:58px;border-radius:10px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);position:relative}
+.cal-d:focus-visible{outline:3px solid var(--wine)}
+.cal-d.x{background:transparent;cursor:default}
+.cal-d.closed{opacity:.4}
+.cal-d.special .cn{box-shadow:inset 0 0 0 2px var(--warn);border-radius:50%}
+.cal-d.today .cn{background:var(--wine);color:#fff;border-radius:50%}
+.cal-d.pend{box-shadow:inset 0 0 0 2px var(--warn)}
+.cn{font-weight:600;font-size:15px;width:28px;height:28px;display:grid;place-items:center}
+.dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;max-width:40px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--wine)}
+.dot.g{background:var(--ok)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin:8px 4px 0}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.tally{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:15px;margin-top:8px}
+.tally b{font-weight:600;text-align:right}
+.fwchips{display:flex;flex-wrap:wrap;gap:6px}
+.fwchips .chip{min-height:40px;padding:6px 10px}
 </style>
 </head>
 <body>
 <header class="top"><div class="top-in">
-  <div class="brand"><small>Leão do Parque</small><h1>Folgas de domingo</h1></div>
-  <div class="sync local" id="sync"><i></i><span>Salvo neste aparelho</span></div>
+  <div class="brand"><small>Leão do Parque</small><h1>Folgas e extras</h1></div>
+  <div class="sync local" id="sync"><i></i><span>Conectando…</span></div>
 </div></header>
 <main id="app"></main>
 <nav class="tabs" id="tabs"></nav>
 <div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastUndo" hidden>Desfazer</button></div>
-
 <script type="application/json" id="state">{"fixos":[{"id":"r1oopz","n":"Rafael","r":"Delivery"},{"id":"t0zgcs","n":"Abel","r":"Cozinheiro"},{"id":"2zkqs5","n":"Mauricio","r":"Chefe de Salão"},{"id":"c16rto","n":"Josué","r":"Copa"},{"id":"snelgp","n":"Luis","r":"Churrasqueiro"}],"extras":[{"id":"yilr4q","n":"Adrian","t":"53984153816","r":"Delivery"}],"dom":{"2026-09-27":{"folgas":["r1oopz","t0zgcs"],"cob":{"r1oopz":{"v":1}}},"2026-10-04":{"folgas":["r1oopz","t0zgcs"],"cob":{}},"2026-10-11":{"folgas":["2zkqs5"],"cob":{}},"2026-10-25":{"folgas":["snelgp"],"cob":{}},"2026-10-18":{"folgas":["c16rto"],"cob":{}},"2026-09-06":{"folgas":["t0zgcs"],"cob":{}},"2026-09-13":{"folgas":["2zkqs5"],"cob":{}},"2026-09-20":{"folgas":["c16rto","snelgp"],"cob":{}}}}</script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -167,7 +197,6 @@ const firebaseConfig={
   messagingSenderId:"949160114772",
   appId:"1:949160114772:web:658cca8496f4580c9d8bc1"
 };
-/* =============================================================== */
 const fb=initializeApp(firebaseConfig);
 const fdb=initializeFirestore(fb,{localCache:persistentLocalCache()});
 const auth=getAuth(fb);
@@ -180,48 +209,69 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
 const toD=s=>{const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2])};
 const today=()=>{const x=new Date();x.setHours(0,0,0,0);return x};
-const nextSun=()=>{const x=today();x.setDate(x.getDate()+(7-x.getDay())%7);return iso(x)};
-const longDate=s=>toD(s).toLocaleDateString('pt-BR',{day:'numeric',month:'long'});
-const fullDate=s=>toD(s).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+const addDays=(k,n)=>{const x=toD(k);x.setDate(x.getDate()+n);return iso(x)};
+const monday=k=>{const x=toD(k);x.setDate(x.getDate()-((x.getDay()+6)%7));return iso(x)};
+const WD=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const WS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const ORDER=[1,2,3,4,5,6,0];
+const dm=k=>toD(k).toLocaleDateString('pt-BR',{day:'numeric',month:'long'});
+const longDay=k=>toD(k).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
 const same=(a,b)=>!!a&&a.trim().toLowerCase()===(b||'').trim().toLowerCase();
 const listNames=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' e '+a[a.length-1];
-const K='folgas_extras_v1';
+const K='folgas_extras_v2';
 
-function norm(s){s=s&&typeof s==='object'?s:{};return{fixos:Array.isArray(s.fixos)?s.fixos:[],extras:Array.isArray(s.extras)?s.extras:[],dom:s.dom&&typeof s.dom==='object'?s.dom:{}}}
-let S=norm(JSON.parse($('state').textContent));
-try{const t=localStorage.getItem(K);if(t)S=norm(JSON.parse(t))}catch(e){}
-
-/* ---------- view state ---------- */
-let ui={};try{ui=JSON.parse(sessionStorage.getItem('ui2')||'{}')}catch(e){}
-let tab=ui.tab||'dom';
-let mo=ui.mo||nextSun().slice(0,7);
-let open=ui.open||nextSun();
-let editing=null,adding=false,addKind='fixo',imgUrl='',imgBlob=null,needsRender=false;
-
-/* ---------- data helpers ---------- */
-const day=k=>S.dom[k]||{folgas:[],cob:{}};
-const mday=k=>{const D=S.dom[k]||(S.dom[k]={folgas:[],cob:{}});D.cob=D.cob||{};D.folgas=D.folgas||[];return D};
-const extraById=id=>S.extras.find(e=>e.id===id);
-function covered(c){return !!(c&&(c.v||(c.e&&c.s==='confirmado'&&extraById(c.e))))}
-function status(k){
-  const D=day(k),off=S.fixos.filter(p=>D.folgas.includes(p.id));
-  const pend=off.filter(p=>!covered((D.cob||{})[p.id]));
-  return{D,off,pend};
+/* ---------- data ---------- */
+function norm(s){
+  s=s&&typeof s==='object'?s:{};
+  const r={v:2,fixos:Array.isArray(s.fixos)?s.fixos:[],extras:Array.isArray(s.extras)?s.extras:[],
+    dias:s.dias&&typeof s.dias==='object'?s.dias:{},cfg:s.cfg&&Array.isArray(s.cfg.open)?s.cfg:{open:[0,1,2,3,4,5,6]}};
+  if(!r.cfg.exc||typeof r.cfg.exc!=='object')r.cfg.exc={};
+  r.fixos.forEach(p=>{if(!Array.isArray(p.fw))p.fw=[]});
+  if(s.dom&&!s.dias){for(const k in s.dom){const o=s.dom[k]||{};r.dias[k]={off:[...(o.folgas||[])],on:[],cob:o.cob||{},ref:[]}}}
+  return r;
 }
-function sundays(m){const [y,mm]=m.split('-').map(Number),r=[],x=new Date(y,mm-1,1);while(x.getMonth()===mm-1){if(x.getDay()===0)r.push(iso(x));x.setDate(x.getDate()+1)}return r}
+let S=norm(JSON.parse($('state').textContent));
+try{const t=localStorage.getItem(K)||localStorage.getItem('folgas_extras_v1');if(t)S=norm(JSON.parse(t))}catch(e){}
+
+const isOpen=k=>k in S.cfg.exc?!!S.cfg.exc[k]:S.cfg.open.includes(toD(k).getDay());
+const isExc=k=>k in S.cfg.exc;
+const day=k=>S.dias[k]||{off:[],on:[],cob:{},ref:[]};
+const mday=k=>{const D=S.dias[k]||(S.dias[k]={});D.off=D.off||[];D.on=D.on||[];D.cob=D.cob||{};D.ref=D.ref||[];return D};
+const extraById=id=>S.extras.find(e=>e.id===id);
+const isFixa=(p,k)=>{const w=toD(k).getDay();return w!==0&&(p.fw||[]).includes(w)};
+function sundayOffs(p,m){return monthDays(m).filter(k=>toD(k).getDay()===0&&isOpen(k)&&offList(k).includes(p))}
+function offList(k){const D=day(k);return S.fixos.filter(p=>(isFixa(p,k)&&!(D.on||[]).includes(p.id))||(D.off||[]).includes(p.id))}
+const okCob=c=>!!(c&&(c.v||(c.e&&c.s==='confirmado'&&extraById(c.e))));
+const okRef=r=>!!(r&&r.e&&r.s==='confirmado'&&extraById(r.e));
+function status(k){
+  const D=day(k),off=offList(k),ref=D.ref||[];
+  const pendF=off.filter(p=>!okCob((D.cob||{})[p.id]));
+  const pendR=ref.filter(r=>!okRef(r));
+  const extras=[...off.map(p=>(D.cob||{})[p.id]).filter(c=>c&&c.e&&c.s==='confirmado'&&extraById(c.e)).map(c=>extraById(c.e)),...ref.filter(okRef).map(r=>extraById(r.e))];
+  return{D,off,ref,pend:pendF.length+pendR.length,extras};
+}
 function monthName(m){const [y,mm]=m.split('-').map(Number),t=new Date(y,mm-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});return t.charAt(0).toUpperCase()+t.slice(1)}
-function upcomingPending(){return Object.keys(S.dom).filter(k=>toD(k)>=today()).reduce((a,k)=>a+status(k).pend.length,0)}
+function weekLabel(w){const e=addDays(w,6),a=toD(w),b=toD(e);return a.getMonth()===b.getMonth()?`${a.getDate()} a ${dm(e)}`:`${dm(w)} a ${dm(e)}`}
+function pendingAhead(){let n=0;const t=iso(today());for(let i=0;i<14;i++){const k=addDays(t,i);if(isOpen(k))n+=status(k).pend}return n}
 function roles(){const set=new Set(['Garçom','Churrasqueiro','Cozinheiro','Saladeiro','Caixa','Copa','Delivery','Chefe de Salão']);[...S.fixos,...S.extras].forEach(p=>p.r&&set.add(p.r));return[...set]}
 
-/* ---------- saving & sync (Firestore) ---------- */
+/* ---------- view state ---------- */
+let ui={};try{ui=JSON.parse(sessionStorage.getItem('ui3')||'{}')}catch(e){}
+let tab=ui.tab||'week';
+let wk=ui.wk||monday(iso(today()));
+let mo=ui.mo||iso(today()).slice(0,7);
+let open=ui.open!==undefined?ui.open:iso(today());
+let teamSub=ui.sub||'equipe',editing=null,adding=false,addKind='fixo',imgUrl='',imgBlob=null,needsRender=false;
+
+/* ---------- sync (Firestore) ---------- */
 let ref=doc(fdb,'app','estado'),me=uid(),lastAt=0,wTimer=null,unsub=null,user=null;
 function setSync(k){const el=$('sync');const t={ok:'Sincronizado',saving:'Salvando…',local:'Offline: salvo no aparelho',err:'Erro ao salvar'}[k];el.className='sync '+k;el.querySelector('span').textContent=t}
 function saveLocal(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
-function persistUI(){try{sessionStorage.setItem('ui2',JSON.stringify({tab,mo,open}))}catch(e){}}
+function persistUI(){try{sessionStorage.setItem('ui3',JSON.stringify({tab,wk,mo,open,sub:teamSub}))}catch(e){}}
 function push(){
   if(!user)return;clearTimeout(wTimer);setSync(navigator.onLine?'saving':'local');
   wTimer=setTimeout(()=>{lastAt=Date.now();
-    setDoc(ref,{fixos:S.fixos,extras:S.extras,dom:S.dom,_by:me,_at:lastAt}).then(()=>setSync('ok')).catch(e=>{setSync('err');toast(e.code==='permission-denied'?'Seu usuário não tem permissão para editar':'Não foi possível salvar')})},450);
+    setDoc(ref,clone({v:2,fixos:S.fixos,extras:S.extras,dias:S.dias,cfg:S.cfg,_by:me,_at:lastAt})).then(()=>setSync('ok')).catch(e=>{setSync('err');toast(e.code==='permission-denied'?'Seu usuário não tem permissão para editar':'Não foi possível salvar')})},450);
 }
 function commit(){imgUrl='';imgBlob=null;saveLocal();push();render()}
 function startSync(){
@@ -232,33 +282,30 @@ function startSync(){
     const d=snap.data()||{};
     setSync(snap.metadata.fromCache&&!navigator.onLine?'local':'ok');
     if(d._by===me&&d._at===lastAt)return;
+    const wasOld=!d.dias&&d.dom;
     S=norm(clone(d));saveLocal();imgUrl='';imgBlob=null;safeRender();
-  },e=>{setSync('err');if(e.code==='permission-denied')loginView('Este e-mail não tem acesso. Fale com o administrador.')});
+    if(wasOld)push();
+  },e=>{setSync('err');if(e.code==='permission-denied')loginView('Este e-mail não tem acesso. Confira as regras do Firestore.')});
 }
+function safeRender(){const a=document.activeElement;if(a&&$('app').contains(a)&&a.tagName==='INPUT'){needsRender=true;return}render()}
+document.addEventListener('focusout',()=>{if(needsRender){needsRender=false;setTimeout(render,0)}});
+
 function loginView(err){
   $('tabs').innerHTML='';$('sync').style.visibility='hidden';
-  $('app').innerHTML=`<div class="card" style="margin-top:20px"><h3>Entrar</h3><p class="hint">Use o e-mail e a senha cadastrados para a equipe da gerência.</p>
+  $('app').innerHTML=`<div class="card" style="margin-top:20px"><h3>Entrar</h3><p class="hint">Use o e-mail e a senha cadastrados no Firebase.</p>
   <label class="fl" for="le">E-mail</label><input id="le" type="email" autocomplete="username">
   <label class="fl" for="lp">Senha</label><input id="lp" type="password" autocomplete="current-password">
   ${err?`<p class="note bad">${esc(err)}</p>`:''}
   <div class="row"><button class="btn pri" id="lb">Entrar</button></div></div>`;
   const go=()=>{$('lb').disabled=true;const em=$('le').value.trim().toLowerCase();signInWithEmailAndPassword(auth,em,$('lp').value).catch(e=>{
     const c=(e&&e.code)||'desconhecido';
-    const M={
-      'auth/invalid-credential':'E-mail ou senha incorretos.',
-      'auth/wrong-password':'Senha incorreta.',
-      'auth/user-not-found':'Não existe usuário com esse e-mail.',
-      'auth/invalid-email':'E-mail digitado em formato inválido.',
-      'auth/unauthorized-domain':'Este site não está nos domínios autorizados do Firebase (Authentication > Settings > Authorized domains).',
-      'auth/operation-not-allowed':'O login por E-mail/senha não está ativado no Firebase (Authentication > Sign-in method).',
-      'auth/configuration-not-found':'O Authentication não está configurado neste projeto. Ative E-mail/senha em Authentication > Sign-in method.',
+    const M={'auth/invalid-credential':'E-mail ou senha incorretos.','auth/wrong-password':'Senha incorreta.','auth/user-not-found':'Não existe usuário com esse e-mail.','auth/invalid-email':'E-mail em formato inválido.',
+      'auth/unauthorized-domain':'Este site não está nos domínios autorizados (Authentication > Settings > Authorized domains).',
+      'auth/operation-not-allowed':'O login por E-mail/senha não está ativado (Authentication > Sign-in method).',
+      'auth/configuration-not-found':'Ative E-mail/senha em Authentication > Sign-in method.',
       'auth/api-key-not-valid.-please-pass-a-valid-api-key.':'A apiKey do firebaseConfig está errada.',
-      'auth/network-request-failed':'Sem conexão com o Firebase. Verifique a internet.',
-      'auth/too-many-requests':'Muitas tentativas. Espere alguns minutos e tente de novo.'
-    };
-    loginView((M[c]||'Não foi possível entrar.')+' (código: '+c+')');
-    $('le').value=em;
-  })};
+      'auth/network-request-failed':'Sem conexão com o Firebase.','auth/too-many-requests':'Muitas tentativas. Espere alguns minutos.'};
+    loginView((M[c]||'Não foi possível entrar.')+' (código: '+c+')');$('le').value=em;})};
   $('lb').onclick=go;$('lp').onkeydown=e=>{if(e.key==='Enter')go()};
 }
 onAuthStateChanged(auth,u=>{
@@ -268,214 +315,264 @@ onAuthStateChanged(auth,u=>{
 });
 window.addEventListener('online',()=>user&&setSync('saving'));
 window.addEventListener('offline',()=>user&&setSync('local'));
-function safeRender(){const a=document.activeElement;if(a&&$('app').contains(a)&&(a.tagName==='INPUT')){needsRender=true;return}render()}
-document.addEventListener('focusout',()=>{if(needsRender){needsRender=false;setTimeout(render,0)}});
 
 /* ---------- toast ---------- */
 let tTimer,undoSnap=null;
 function toast(msg,snap){$('toastMsg').textContent=msg;undoSnap=snap||null;$('toastUndo').hidden=!snap;$('toast').hidden=false;clearTimeout(tTimer);tTimer=setTimeout(()=>{$('toast').hidden=true;undoSnap=null},snap?6000:2600)}
 $('toastUndo').onclick=()=>{if(undoSnap){S=undoSnap;undoSnap=null;$('toast').hidden=true;commit()}};
 
-/* ---------- views ---------- */
+/* ---------- tabs ---------- */
 const ICON={
- dom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M7.5 14h3"/></svg>',
- share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 12v6.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V12"/></svg>',
+ week:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M7.5 14h9"/></svg>',
+ month:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 13.5h.01M12 13.5h.01M16 13.5h.01M8 17h.01M12 17h.01" stroke-width="2.6" stroke-linecap="round"/></svg>',
  team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.1 4 1.6 4.6 4.3"/></svg>'
 };
 function renderTabs(){
-  const p=upcomingPending();
-  const T=[['dom','Domingos',p],['share','Compartilhar',0],['team','Equipe',0]];
-  $('tabs').innerHTML='<div class="tabs-in">'+T.map(([k,l,b])=>`<button class="${tab===k?'on':''}" data-a="tab" data-id="${k}" aria-current="${tab===k?'page':'false'}">${ICON[k]}${l}${b?`<span class="badge" aria-label="${b} pendentes">${b}</span>`:''}</button>`).join('')+'</div>';
+  const p=pendingAhead();
+  const T=[['week','Semana',p],['month','Mês',0],['team','Equipe',0]];
+  $('tabs').innerHTML='<div class="tabs-in">'+T.map(([k,l,b])=>`<button class="${tab===k?'on':''}" data-a="tab" data-id="${k}" aria-current="${tab===k?'page':'false'}">${ICON[k]}${l}${b?`<span class="badge" aria-label="${b} pendentes nos próximos 14 dias">${b}</span>`:''}</button>`).join('')+'</div>';
 }
-function monthNav(){return `<div class="mnav"><button class="ib" data-a="mprev" aria-label="Mês anterior">‹</button><h2>${monthName(mo)}</h2><button class="ib" data-a="mnext" aria-label="Próximo mês">›</button></div>`}
 
-function vDomingos(){
-  if(!S.fixos.length)return `<div class="empty"><p>Para começar, cadastre quem trabalha fixo aos domingos.</p><button class="btn pri" data-a="tab" data-id="team">Cadastrar equipe</button></div>`;
-  const list=sundays(mo),ns=nextSun(),t=today();
-  const pendSundays=list.filter(k=>toD(k)>=t&&status(k).pend.length).length;
-  let h=monthNav();
-  h+=`<p class="lead">${pendSundays?`${pendSundays} ${pendSundays===1?'domingo ainda precisa':'domingos ainda precisam'} de cobertura`:'Toque num domingo para marcar folgas e extras'}</p>`;
-  h+=list.map(k=>{
-    const {off,pend}=status(k),isOpen=open===k,past=toD(k)<t;
-    const pill=!off.length?'<span class="pill none">Sem folgas</span>':pend.length?`<span class="pill warn">Falta cobrir ${pend.length}</span>`:'<span class="pill ok">Tudo certo</span>';
-    const sub=off.length?`${listNames(off.map(p=>esc(p.n)))} de folga`:'Ninguém de folga';
-    let x=`<section class="sun${isOpen?' open':''}${past?' past':''}"><button class="sun-h" data-a="open" data-id="${k}" aria-expanded="${isOpen}"><span class="dnum">${+k.slice(8)}</span><span class="dmeta"><b>${longDate(k)}${k===ns?'<span class="nexttag">Próximo</span>':''}</b><small>${sub}</small></span>${pill}</button>`;
-    if(isOpen)x+=`<div class="sun-b">${dayBody(k)}</div>`;
+/* ---------- semana ---------- */
+function vWeek(){
+  if(!S.fixos.length)return `<div class="empty"><p>Para começar, cadastre a equipe.</p><button class="btn pri" data-a="tab" data-id="team">Cadastrar equipe</button></div>`;
+  const t=iso(today());
+  let h=`<div class="mnav"><button class="ib" data-a="wprev" aria-label="Semana anterior">‹</button><h2 style="font-size:21px">${weekLabel(wk)}</h2><button class="ib" data-a="wnext" aria-label="Próxima semana">›</button></div>`;
+  const days=[...Array(7)].map((_,i)=>addDays(wk,i));
+  const pd=days.filter(k=>isOpen(k)&&k>=t&&status(k).pend).length;
+  h+=`${wk!==monday(t)?`<div style="text-align:center;margin-bottom:6px"><button class="btn ghost" data-a="thisweek" style="min-height:36px;padding:4px 12px">Voltar para esta semana</button></div>`:''}<p class="lead">${pd?`${pd} ${pd===1?'dia precisa':'dias precisam'} de atenção`:'Toque num dia para marcar folgas e extras'}</p>`;
+  h+=days.map(k=>{
+    const wd=toD(k).getDay(),past=k<t;
+    if(!isOpen(k))return `<section class="sun closed"><div class="sun-h"><span class="dcol"><span class="dname">${WS[wd]}</span><span class="dnum">${+k.slice(8)}</span></span><span class="dmeta"><b>${WD[wd]}, ${dm(k)}</b><small>${isExc(k)?'Fechado neste dia (feriado)':'Casa fechada'}</small></span><button class="btn" style="min-height:38px;padding:6px 10px;font-size:14px" data-a="exc" data-d="${k}" data-v="${isExc(k)?'reset':'open'}">${isExc(k)?'Reabrir':'Abrir neste dia'}</button></div></section>`;
+    const {off,ref,pend,extras}=status(k),isO=open===k;
+    const pill=pend?`<span class="pill warn">Falta ${pend}</span>`:(off.length||ref.length)?'<span class="pill ok">Tudo certo</span>':'<span class="pill none">Normal</span>';
+    const bits=[];if(off.length)bits.push(`${listNames(off.map(p=>esc(p.n)))} de folga`);if(extras.length)bits.push(`${extras.length} ${extras.length===1?'extra':'extras'}`);
+    let x=`<section class="sun${isO?' open':''}${past?' past':''}" id="d-${k}"><button class="sun-h" data-a="open" data-id="${k}" aria-expanded="${isO}"><span class="dcol"><span class="dname">${WS[wd]}</span><span class="dnum">${+k.slice(8)}</span></span><span class="dmeta"><b>${WD[wd]}, ${dm(k)}${k===t?'<span class="nexttag">Hoje</span>':''}${isExc(k)?'<span class="nexttag" style="background:var(--warn)">Abertura especial</span>':''}</b><small>${bits.join(', ')||'Todos trabalham'}</small></span>${pill}</button>`;
+    if(isO)x+=`<div class="sun-b">${dayBody(k)}</div>`;
     return x+'</section>';
   }).join('');
+  const txt=weekText();
+  h+=`<div class="card" style="margin-top:16px"><h3>Escala da semana</h3><p class="hint">Mensagem com as folgas e os extras confirmados.</p><pre class="pre">${esc(txt)}</pre><div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">Enviar no WhatsApp</a><button class="btn" data-a="copy" data-v="week">Copiar texto</button></div></div>`;
   return h;
+}
+function waBtn(ex,k,motivo,st){
+  const pix=ex&&ex.pix&&st==='confirmado'?`<button class="btn" data-a="copypix" data-id="${ex.id}">Copiar Pix de ${esc(ex.n)}</button>`:'';
+  if(!ex||!ex.t)return pix?`<div class="row">${pix}</div>`:'';let n=ex.t.replace(/\D/g,'');if(!n.startsWith('55')||n.length<12)n='55'+n;
+  const msg=`Oi ${ex.n}! Tudo bem? Precisamos de você na Churrascaria Leão do Parque na ${longDay(k)}${motivo}. Consegue vir?`;
+  return `<div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}">Chamar ${esc(ex.n)} no WhatsApp</a>${pix}</div>`;
+}
+function extraSelect(k,key,cur,used,role,rec,label){
+  const opts=[...S.extras].sort((a,b)=>same(b.r,role)-same(a.r,role)||a.n.localeCompare(b.n));
+  return `<label class="fl" for="ex-${k}-${key}">${label}</label><select id="ex-${k}-${key}" data-a="ext" data-key="${key}" data-d="${k}"><option value="">Escolher extra…</option>`+
+    opts.map(e=>{const busy=used.has(e.id)&&cur!==e.id,r=(rec||[]).includes(e.id)&&cur!==e.id;
+      return `<option value="${e.id}"${cur===e.id?' selected':''}${busy?' disabled':''}>${esc(e.n)}${e.r?' ('+esc(e.r)+')':''}${role&&same(e.r,role)?' ★ mesma função':''}${busy?' – já escalado':''}${r?' – recusou':''}</option>`}).join('')+'</select>';
+}
+function statusSeg(k,key,c,ex){
+  let x=`<label class="fl">O que ${esc(ex.n)} respondeu?</label><div class="seg s3" role="group">`+
+    [['chamado','Ainda não','warn'],['confirmado','Confirmou','ok'],['recusou','Recusou','bad']].map(([s,l,cl])=>`<button class="${c.s===s?'on '+cl:''}" data-a="st" data-v="${s}" data-key="${key}" data-d="${k}">${l}</button>`).join('')+'</div>';
+  if(c.s==='recusou')x+=`<p class="note bad">Escolha outro extra na lista acima.</p>`;
+  return x;
 }
 function dayBody(k){
-  const {D,off}=status(k);
-  let h=`<div class="step"><span>1</span>Quem folga neste domingo?</div><p class="hint">Toque no nome para marcar ou tirar a folga.</p><div class="chips">`+
-    S.fixos.map(p=>{const on=D.folgas.includes(p.id);return `<button class="chip${on?' on':''}" data-a="fol" data-id="${p.id}" data-d="${k}" aria-pressed="${on}">${esc(p.n)}<small>${esc(p.r||'')}</small></button>`}).join('')+'</div>';
-  if(!off.length)return h+`<p class="work">Todos trabalham neste domingo.</p>`;
-  h+=`<div class="step"><span>2</span>Quem cobre cada folga?</div>`;
-  const used=new Set(Object.entries(D.cob||{}).filter(([,c])=>c.e&&c.s!=='recusou').map(([,c])=>c.e));
-  h+=off.map(p=>{
-    const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v;
-    let st;
-    if(vend)st='<span class="st ok">Vendeu a folga</span>';
-    else if(ex&&c.s==='confirmado')st=`<span class="st ok">Coberto por ${esc(ex.n)}</span>`;
-    else if(ex&&c.s==='chamado')st=`<span class="st warn">Esperando ${esc(ex.n)} responder</span>`;
-    else if(ex&&c.s==='recusou')st='<span class="st bad">Precisa de outro extra</span>';
-    else st='<span class="st bad">Sem cobertura</span>';
-    let x=`<div class="cov"><div class="cov-h"><div><b>${esc(p.n)}</b><span class="role">${esc(p.r||'')}</span></div>${st}</div>
-      <div class="seg" role="group" aria-label="Como cobrir a folga de ${esc(p.n)}"><button class="${!vend?'on':''}" data-a="mode" data-v="extra" data-id="${p.id}" data-d="${k}">Chamar extra</button><button class="${vend?'on':''}" data-a="mode" data-v="vend" data-id="${p.id}" data-d="${k}">Vendeu a folga</button></div>`;
-    if(vend)return x+`<p class="note ok">${esc(p.n)} vem trabalhar normalmente. Não precisa de extra.</p></div>`;
-    if(!S.extras.length)return x+`<p class="note">Nenhum extra cadastrado ainda.</p><div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div></div>`;
-    const rec=c.rec||[];
-    const opts=[...S.extras].sort((a,b)=>same(b.r,p.r)-same(a.r,p.r)||a.n.localeCompare(b.n));
-    x+=`<label class="fl" for="ex-${k}-${p.id}">Extra para o lugar de ${esc(p.n)}</label><select id="ex-${k}-${p.id}" data-a="ext" data-id="${p.id}" data-d="${k}"><option value="">Escolher extra…</option>`+
-      opts.map(e=>{const busy=used.has(e.id)&&c.e!==e.id,r=rec.includes(e.id)&&c.e!==e.id;
-        return `<option value="${e.id}"${c.e===e.id?' selected':''}${busy?' disabled':''}>${esc(e.n)}${e.r?' ('+esc(e.r)+')':''}${same(e.r,p.r)?' ★ mesma função':''}${busy?' – já escalado':''}${r?' – recusou':''}</option>`}).join('')+'</select>';
-    if(ex){
-      x+=`<label class="fl">O que ${esc(ex.n)} respondeu?</label><div class="seg s3" role="group">`+
-        [['chamado','Ainda não','warn'],['confirmado','Confirmou','ok'],['recusou','Recusou','bad']].map(([s,l,cl])=>`<button class="${c.s===s?'on '+cl:''}" data-a="st" data-v="${s}" data-id="${p.id}" data-d="${k}">${l}</button>`).join('')+'</div>';
-      if(c.s==='recusou')x+=`<p class="note bad">Escolha outro extra na lista acima.</p>`;
-      if(ex.t&&c.s!=='recusou'){let n=ex.t.replace(/\D/g,'');if(!n.startsWith('55')||n.length<12)n='55'+n;
-        x+=`<div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent('Oi '+ex.n+'! Tudo bem? Precisamos de você na Churrascaria Leão do Parque no domingo, '+fullDate(k)+', no lugar de '+p.n+(p.r?' ('+p.r+')':'')+'. Consegue vir?')}">Chamar ${esc(ex.n)} no WhatsApp</a></div>`}
-    }
-    return x+'</div>';
-  }).join('');
-  const w=S.fixos.filter(p=>!D.folgas.includes(p.id));
-  if(w.length)h+=`<p class="work">Trabalham: ${listNames(w.map(p=>esc(p.n)))}.</p>`;
-  return h;
-}
-
-function vEquipe(){
-  const rl=roles();
-  let h=`<datalist id="fl">${rl.map(r=>`<option>${esc(r)}</option>`).join('')}</datalist>`;
-  if(adding){
-    h+=`<div class="addbox"><div class="step" style="margin-top:0">Nova pessoa</div>
-      <div class="seg" role="group" aria-label="Tipo"><button class="${addKind==='fixo'?'on':''}" data-a="kind" data-v="fixo">Fixo da casa</button><button class="${addKind==='extra'?'on':''}" data-a="kind" data-v="extra">Extra (diarista)</button></div>
-      <label class="fl" for="nn">Nome</label><input id="nn" autocomplete="off">
-      <label class="fl" for="nr">Função</label><input id="nr" list="fl" autocomplete="off">
-      ${addKind==='extra'?'<label class="fl" for="nt">WhatsApp com DDD</label><input id="nt" type="tel" inputmode="tel" placeholder="53 98415-3816">':''}
-      <div class="row"><button class="btn pri" data-a="add">Adicionar</button><button class="btn ghost" data-a="cancel">Cancelar</button></div></div>`;
-  }else h+=`<div class="row" style="margin-top:0"><button class="btn pri" data-a="goadd" data-v="fixo">+ Adicionar pessoa</button></div>`;
-  const cnt=id=>Object.values(S.dom).filter(x=>(x.folgas||[]).includes(id)).length;
-  const cntE=id=>Object.values(S.dom).reduce((a,x)=>a+Object.values(x.cob||{}).filter(c=>c.e===id&&c.s==='confirmado').length,0);
-  const row=(p,kind)=>{
-    const meta=kind==='fixo'?`${esc(p.r||'Sem função')}, ${cnt(p.id)} ${cnt(p.id)===1?'folga marcada':'folgas marcadas'}`:`${esc(p.r||'Sem função')}${p.t?', '+esc(p.t):''}, ${cntE(p.id)} ${cntE(p.id)===1?'domingo':'domingos'} trabalhado${cntE(p.id)===1?'':'s'}`;
-    let x=`<div class="person"><button data-a="edit" data-id="${p.id}" aria-expanded="${editing===p.id}"><span><b>${esc(p.n)}</b><span class="pm">${meta}</span></span><span class="edit">${editing===p.id?'Fechar':'Editar'}</span></button>`;
-    if(editing===p.id)x+=`<div class="pform"><label class="fl" for="en">Nome</label><input id="en" value="${esc(p.n)}"><label class="fl" for="er">Função</label><input id="er" list="fl" value="${esc(p.r||'')}">${kind==='extra'?`<label class="fl" for="et">WhatsApp com DDD</label><input id="et" type="tel" inputmode="tel" value="${esc(p.t||'')}">`:''}
-      <div class="row"><button class="btn pri" data-a="savep" data-id="${p.id}" data-v="${kind}">Salvar</button><button class="btn danger" data-a="rm" data-id="${p.id}" data-v="${kind}">Remover ${esc(p.n)}</button></div></div>`;
-    return x+'</div>';
-  };
-  h+=`<div class="sec"><h2>Fixos</h2><small>Folgam no domingo em rodízio</small></div>`+(S.fixos.length?S.fixos.map(p=>row(p,'fixo')).join(''):'<div class="empty">Ninguém cadastrado ainda.</div>');
-  h+=`<div class="sec"><h2>Extras</h2><small>Chamados para cobrir folgas</small></div>`+(S.extras.length?S.extras.map(p=>row(p,'extra')).join(''):'<div class="empty">Cadastre os extras para poder chamá-los pelo WhatsApp.</div>');
-  h+=`<div class="row" style="margin-top:24px"><span class="hint" style="margin:0">Conectado como ${esc(user&&user.email||'')}</span><button class="btn ghost" data-a="logout">Sair</button></div>`;
-  return h;
-}
-
-function calText(){
-  let t=`*Folgas de domingo – ${monthName(mo)}*\nChurrascaria Leão do Parque\n`;
-  sundays(mo).forEach(s=>{const D=day(s);t+=`\n*${s.slice(8)}/${s.slice(5,7)}*\n`;
-    const l=S.fixos.filter(p=>D.folgas.includes(p.id));
-    t+=l.length?l.map(p=>{const c=(D.cob||{})[p.id],ex=c&&c.s==='confirmado'&&extraById(c.e);return '• '+p.n+(ex?' (extra: '+ex.n+')':'')+(c&&c.v?' (vendeu a folga)':'')}).join('\n'):'Sem folgas';t+='\n'});
-  return t.trim()}
-function linesFor(k){const D=day(k),L=[];S.fixos.forEach(p=>{if(D.folgas.includes(p.id)){L.push([p.n,0]);const c=(D.cob||{})[p.id],ex=c&&c.s==='confirmado'&&extraById(c.e);if(ex)L.push(['extra: '+ex.n,1]);if(c&&c.v)L.push(['vendeu a folga',1])}});return L}
-function grid(){
-  const [y,mm]=mo.split('-').map(Number),N=new Date(y,mm,0).getDate(),f=new Date(y,mm-1,1).getDay();
-  let h='<div class="cimg"><div class="ch"><b>Churrascaria Leão do Parque</b><span>Folgas de domingo, '+monthName(mo)+'</span></div><div class="cg">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map((n,i)=>`<div class="wd${i?'':' sd'}">${n}</div>`).join('');
-  for(let i=0;i<f;i++)h+='<div class="c e"></div>';
-  for(let dd=1;dd<=N;dd++){
-    if((f+dd-1)%7){h+=`<div class="c"><span class="n">${dd}</span></div>`;continue}
-    const k=mo+'-'+String(dd).padStart(2,'0');
-    h+=`<div class="c s"><span class="n">${dd}</span>`+linesFor(k).map(([t,s])=>s?`<div class="ex">${esc(t)}</div>`:`<div class="nm">${esc(t)}</div>`).join('')+'</div>';
+  const {D,off,ref}=status(k),isSun=toD(k).getDay()===0;
+  const used=new Set([...Object.values(D.cob||{}).filter(c=>c.e&&c.s!=='recusou').map(c=>c.e),...ref.filter(r=>r.e&&r.s!=='recusou').map(r=>r.e)]);
+  let h=`<div class="step"><span>1</span>Quem folga neste dia?</div><p class="hint">Toque no nome para marcar ou tirar a folga.</p><div class="chips">`+
+    S.fixos.map(p=>{const on=off.includes(p);const fixa=isFixa(p,k);
+      const other=isSun&&!on?sundayOffs(p,k.slice(0,7)):[];
+      const sub=other.length?`já folga dia ${+other[0].slice(8)}`:fixa?(on?'folga fixa':'trocou a folga fixa'):(p.r||'');
+      return `<button class="chip${on?' on':''}${other.length?' dis':''}" data-a="fol" data-id="${p.id}" data-d="${k}" aria-pressed="${on}"${other.length?' aria-disabled="true"':''}>${esc(p.n)}<small>${esc(sub)}</small></button>`}).join('')+'</div>'+
+    (isSun?(()=>{const sem=S.fixos.filter(p=>!sundayOffs(p,k.slice(0,7)).length);return `<p class="hint" style="margin-top:8px">Domingo: cada um folga 1 por mês. ${sem.length?'Ainda sem domingo em '+monthName(k.slice(0,7)).split(' ')[0].toLowerCase()+': '+listNames(sem.map(p=>esc(p.n)))+'.':'Todos já têm o domingo do mês.'}</p>`})():'');
+  if(off.length){
+    h+=`<div class="step"><span>2</span>Quem cobre cada folga?</div>`;
+    h+=off.map(p=>{
+      const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v;
+      let st;
+      if(vend)st='<span class="st ok">Vendeu a folga</span>';
+      else if(ex&&c.s==='confirmado')st=`<span class="st ok">Coberto por ${esc(ex.n)}</span>`;
+      else if(ex&&c.s==='chamado')st=`<span class="st warn">Esperando ${esc(ex.n)}</span>`;
+      else if(ex&&c.s==='recusou')st='<span class="st bad">Precisa de outro extra</span>';
+      else st='<span class="st bad">Sem cobertura</span>';
+      let x=`<div class="cov"><div class="cov-h"><div><b>${esc(p.n)}</b><span class="role">${esc(p.r||'')}</span></div>${st}</div>
+        <div class="seg" role="group"><button class="${!vend?'on':''}" data-a="mode" data-v="extra" data-key="${p.id}" data-d="${k}">Chamar extra</button><button class="${vend?'on':''}" data-a="mode" data-v="vend" data-key="${p.id}" data-d="${k}">Vendeu a folga</button></div>`;
+      if(vend)return x+`<p class="note ok">${esc(p.n)} vem trabalhar normalmente.</p></div>`;
+      if(!S.extras.length)return x+`<p class="note">Nenhum extra cadastrado ainda.</p><div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div></div>`;
+      x+=extraSelect(k,p.id,c.e,used,p.r,c.rec,`Extra para o lugar de ${esc(p.n)}`);
+      if(ex){x+=statusSeg(k,p.id,c,ex);if(c.s!=='recusou')x+=waBtn(ex,k,`, no lugar de ${p.n}${p.r?' ('+p.r+')':''}`,c.s)}
+      return x+'</div>';
+    }).join('');
   }
-  return h+'</div></div>'}
+  h+=`<div class="step"><span>${off.length?3:2}</span>Extras de reforço</div><p class="hint">Para dias de movimento maior, mesmo sem ninguém de folga.</p>`;
+  h+=ref.map(r=>{
+    const ex=r.e&&extraById(r.e);
+    const st=!ex?'<span class="st bad">Escolha o extra</span>':r.s==='confirmado'?'<span class="st ok">Confirmado</span>':r.s==='recusou'?'<span class="st bad">Recusou</span>':'<span class="st warn">Esperando resposta</span>';
+    let x=`<div class="cov refbox"><div class="cov-h"><div><b>${ex?esc(ex.n):'Reforço'}</b>${ex&&ex.r?`<span class="role">${esc(ex.r)}</span>`:''}</div>${st}</div>`;
+    x+=extraSelect(k,'r:'+r.id,r.e,used,'',r.rec,'Qual extra?');
+    if(ex){x+=statusSeg(k,'r:'+r.id,r,ex);if(r.s!=='recusou')x+=waBtn(ex,k,', para reforçar a equipe',r.s)}
+    return x+`<div class="row"><button class="btn danger" data-a="rmref" data-key="r:${r.id}" data-d="${k}">Tirar este reforço</button></div></div>`;
+  }).join('');
+  h+=S.extras.length?`<button class="btn addref" data-a="addref" data-d="${k}">+ Chamar extra de reforço</button>`:`<div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div>`;
+  const w=S.fixos.filter(p=>!off.includes(p));
+  if(w.length)h+=`<p class="work">Trabalham: ${listNames(w.map(p=>esc(p.n)))}.</p>`;
+  h+=`<div class="row" style="margin-top:16px;border-top:1px dashed var(--line);padding-top:10px">${isExc(k)?`<button class="btn ghost" data-a="exc" data-d="${k}" data-v="reset">Desfazer abertura especial</button>`:`<button class="btn ghost" data-a="exc" data-d="${k}" data-v="close">Fechar neste dia (feriado)</button>`}</div>`;
+  return h;
+}
+
+/* ---------- mês ---------- */
+function monthDays(m){const [y,mm]=m.split('-').map(Number),r=[],x=new Date(y,mm-1,1);while(x.getMonth()===mm-1){r.push(iso(x));x.setDate(x.getDate()+1)}return r}
+function vMonth(){
+  const t=iso(today()),days=monthDays(mo),lead=(toD(days[0]).getDay()+6)%7;
+  let h=`<div class="mnav"><button class="ib" data-a="mprev" aria-label="Mês anterior">‹</button><h2>${monthName(mo)}</h2><button class="ib" data-a="mnext" aria-label="Próximo mês">›</button></div>`;
+  h+=`<div class="cal"><div class="cal-g">`+ORDER.map(i=>`<div class="cal-w">${WS[i]}</div>`).join('');
+  for(let i=0;i<lead;i++)h+='<div class="cal-d x"></div>';
+  days.forEach(k=>{
+    if(!isOpen(k)){h+=`<button class="cal-d closed" data-a="goday" data-id="${k}" aria-label="${dm(k)}: fechado"><span class="cn">${+k.slice(8)}</span></button>`;return}
+    const {off,pend,extras}=status(k);
+    const dots=off.slice(0,4).map(()=>'<i class="dot"></i>').join('')+extras.slice(0,4).map(()=>'<i class="dot g"></i>').join('');
+    const lbl=`${WD[toD(k).getDay()]}, ${dm(k)}: ${off.length} de folga, ${extras.length} extras${pend?', '+pend+' pendente':''}`;
+    h+=`<button class="cal-d${k===t?' today':''}${isExc(k)?' special':''}${pend&&k>=t?' pend':''}" data-a="goday" data-id="${k}" aria-label="${lbl}"><span class="cn">${+k.slice(8)}</span><span class="dots">${dots}</span></button>`;
+  });
+  h+=`</div><div class="legend"><span><i class="dot"></i> folga</span><span><i class="dot g"></i> extra confirmado</span><span><i style="width:12px;height:12px;border-radius:3px;box-shadow:inset 0 0 0 2px var(--warn);display:inline-block"></i> falta resolver</span><span><i style="width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--warn);display:inline-block"></i> abertura especial</span></div></div>`;
+  // tally
+  const cnt={},ext={};days.forEach(k=>{if(!isOpen(k))return;const s=status(k);s.off.forEach(p=>cnt[p.id]=(cnt[p.id]||0)+1);s.extras.forEach(e=>ext[e.id]=(ext[e.id]||0)+1)});
+  h+=`<div class="card"><h3>Resumo do mês</h3><p class="hint">Folgas de cada fixo (com o domingo do mês) e dias trabalhados pelos extras.</p><div class="tally">`+
+    S.fixos.map(p=>{const sd=sundayOffs(p,mo);return `<span>${esc(p.n)}<small style="display:block;color:${sd.length?'var(--mut)':'var(--warn)'};font-size:13px">${sd.length?'Domingo: dia '+(+sd[0].slice(8)):'Ainda sem folga de domingo'}</small></span><b>${cnt[p.id]||0} ${(cnt[p.id]||0)===1?'folga':'folgas'}</b>`}).join('')+
+    S.extras.filter(e=>ext[e.id]).map(e=>`<span>${esc(e.n)} <small style="color:var(--mut)">(extra)</small></span><b>${ext[e.id]} ${ext[e.id]===1?'dia':'dias'}</b>`).join('')+`</div></div>`;
+  h+=`<div class="card"><h3>Calendário para o grupo</h3>${imgUrl?`<img class="gi" src="${imgUrl}" alt="Calendário de folgas de ${monthName(mo)}"><div class="row"><button class="btn pri" data-a="dl">Salvar imagem</button>${navigator.canShare?'<button class="btn" data-a="shimg">Compartilhar</button>':''}</div><p class="hint" style="margin-top:8px">No celular, dá para tocar e segurar a imagem para salvar.</p>`:`<p class="hint">Gera uma imagem do mês com os nomes de quem folga e dos extras.</p><div class="row"><button class="btn pri" data-a="gen">Criar imagem do mês</button></div>`}</div>`;
+  const txt=monthText();
+  h+=`<div class="card"><h3>Mensagem do mês</h3><pre class="pre">${esc(txt)}</pre><div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">Enviar no WhatsApp</a><button class="btn" data-a="copy" data-v="month">Copiar texto</button></div></div>`;
+  return h;
+}
+function linesFor(k){const {D,off,ref}=status(k),L=[];
+  off.forEach(p=>{L.push([p.n,0]);const c=(D.cob||{})[p.id];if(okCob(c)&&c.e)L.push(['extra: '+extraById(c.e).n,1]);if(c&&c.v)L.push(['vendeu a folga',1])});
+  ref.filter(okRef).forEach(r=>L.push(['reforço: '+extraById(r.e).n,1]));return L}
+function textFor(days){return days.filter(k=>isOpen(k)&&linesFor(k).length).map(k=>{const d=toD(k);return `*${WS[d.getDay()]} ${k.slice(8)}/${k.slice(5,7)}*\n`+linesFor(k).map(([t,s])=>s?'   '+t:'• '+t+' (folga)').join('\n')}).join('\n\n')}
+function weekText(){const b=textFor([...Array(7)].map((_,i)=>addDays(wk,i)));return `*Escala da semana – ${weekLabel(wk)}*\nChurrascaria Leão do Parque\n\n`+(b||'Sem folgas nem extras nesta semana.')}
+function monthText(){const b=textFor(monthDays(mo));return `*Folgas e extras – ${monthName(mo)}*\nChurrascaria Leão do Parque\n\n`+(b||'Sem folgas nem extras neste mês.')}
 function drawImg(){
-  const [y,mm]=mo.split('-').map(Number),N=new Date(y,mm,0).getDate(),f=new Date(y,mm-1,1).getDay(),rows=Math.ceil((f+N)/7);
-  const W=1080,P=40,G=4,IW=W-2*P,SW=Math.round((IW-6*G)*2.4/8.4),OW=Math.round((IW-6*G-SW)/6);
-  const cw=i=>i?OW:SW,cx=i=>P+(i?SW+G+(i-1)*(OW+G):0);
-  const rh=[];for(let r=0;r<rows;r++){let h=100;const dd=r*7-f+1;if(dd>=1&&dd<=N)h=Math.max(h,64+linesFor(mo+'-'+String(dd).padStart(2,'0')).length*36);rh.push(h)}
-  const HB=170,H=HB+30+40+rh.reduce((a,b)=>a+b+G,0)+40,c=document.createElement('canvas');c.width=W;c.height=H;
-  const x=c.getContext('2d'),F='Barlow,system-ui,sans-serif',FC='"Barlow Condensed","Arial Narrow",sans-serif';
+  const days=monthDays(mo),lead=(toD(days[0]).getDay()+6)%7,rows=Math.ceil((lead+days.length)/7);
+  const W=1080,P=30,G=4,CW=(W-2*P-6*G)/7;
+  const rh=[];for(let r=0;r<rows;r++){let h=110;for(let c=0;c<7;c++){const i=r*7+c-lead;if(i>=0&&i<days.length)h=Math.max(h,56+linesFor(days[i]).length*28)}rh.push(h)}
+  const HB=160,H=HB+24+40+rh.reduce((a,b)=>a+b+G,0)+30,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const x=cv.getContext('2d'),F='Barlow,system-ui,sans-serif',FC='"Barlow Condensed","Arial Narrow",sans-serif';
   x.fillStyle='#fff';x.fillRect(0,0,W,H);x.textBaseline='top';
   x.fillStyle='#1f4a33';x.fillRect(0,0,W,HB);x.fillStyle='#8e1f2f';x.fillRect(0,HB,W,10);
-  x.fillStyle='#fff';x.font='700 60px '+FC;x.fillText('Churrascaria Leão do Parque',P,38);
-  x.globalAlpha=.85;x.font='30px '+F;x.fillText('Folgas de domingo, '+monthName(mo),P,108);x.globalAlpha=1;
-  let y0=HB+30;
-  ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach((n,i)=>{x.fillStyle=i?'#5b695f':'#8e1f2f';x.font='600 22px '+F;x.fillText(n,cx(i)+8,y0+8)});
+  x.fillStyle='#fff';x.font='700 58px '+FC;x.fillText('Churrascaria Leão do Parque',P,34);
+  x.globalAlpha=.85;x.font='30px '+F;x.fillText('Folgas e extras, '+monthName(mo),P,102);x.globalAlpha=1;
+  let y0=HB+24;
+  ORDER.forEach((wd,c)=>{x.fillStyle='#5b695f';x.font='600 22px '+F;x.fillText(WS[wd],P+c*(CW+G)+8,y0+6)});
   y0+=40;
   for(let r=0;r<rows;r++){
-    for(let i=0;i<7;i++){
-      const dd=r*7+i-f+1,X=cx(i),ok=dd>=1&&dd<=N;
-      x.fillStyle=!ok?'#fafbf8':i?'#f1f3ee':'#f7e3e6';x.fillRect(X,y0,cw(i),rh[r]);
-      if(!ok)continue;
-      x.fillStyle=i?'#5b695f':'#8e1f2f';x.font=(i?'22px '+F:'700 38px '+FC);x.fillText(dd,X+10,y0+8);
-      if(i)continue;
-      let ty=y0+58;const L=linesFor(mo+'-'+String(dd).padStart(2,'0'));
-      if(!L.length){x.fillStyle='#5b695f';x.font='22px '+F;x.fillText('sem folgas',X+10,ty)}
-      L.forEach(([t,k])=>{let fs=k?22:28;const b=k?'':'700 ';x.font=b+fs+'px '+F;while(x.measureText(t).width>SW-20&&fs>14){fs--;x.font=b+fs+'px '+F}
-        x.fillStyle=k?'#23704a':'#17221b';x.fillText(t,X+10,ty);ty+=36});
+    for(let c=0;c<7;c++){
+      const i=r*7+c-lead,X=P+c*(CW+G);
+      if(i<0||i>=days.length){x.fillStyle='#fafbf8';x.fillRect(X,y0,CW,rh[r]);continue}
+      const k=days[i],L=linesFor(k),op=isOpen(k);
+      x.fillStyle=!op?'#f4f4f2':L.length?'#f7e3e6':'#f1f3ee';x.fillRect(X,y0,CW,rh[r]);
+      x.fillStyle=L.length?'#8e1f2f':'#5b695f';x.font='700 30px '+FC;x.fillText(+k.slice(8),X+8,y0+8);
+      if(!op){x.fillStyle='#9aa39c';x.font='18px '+F;x.fillText('fechado',X+8,y0+50);continue}
+      let ty=y0+50;
+      L.forEach(([t,s])=>{let fs=s?17:21;const b=s?'':'700 ';x.font=b+fs+'px '+F;while(x.measureText(t).width>CW-14&&fs>11){fs--;x.font=b+fs+'px '+F}
+        x.fillStyle=s?'#23704a':'#17221b';x.fillText(t,X+7,ty);ty+=28});
     }
     y0+=rh[r]+G;
   }
-  return c}
-async function gen(){try{await document.fonts.load('700 60px "Barlow Condensed"');await document.fonts.load('30px Barlow')}catch(e){}
-  const c=drawImg();c.toBlob(b=>{imgBlob=b;imgUrl=c.toDataURL('image/png');render()},'image/png')}
-function vShare(){
-  if(!S.fixos.length)return `<div class="empty"><p>Cadastre a equipe e marque as folgas antes de compartilhar.</p><button class="btn pri" data-a="tab" data-id="team">Cadastrar equipe</button></div>`;
-  let h=monthNav();
-  h+=`<div class="card"><h3>Calendário do mês</h3><p class="hint">Mostra quem folga e os extras que já confirmaram.</p>${imgUrl?`<img class="gi" src="${imgUrl}" alt="Calendário de folgas de ${monthName(mo)}">`:grid()}
-    <div class="row">${imgUrl?`<button class="btn pri" data-a="dl">Salvar imagem</button>${navigator.canShare?'<button class="btn" data-a="shimg">Compartilhar</button>':''}`:'<button class="btn pri" data-a="gen">Criar imagem para enviar</button>'}</div>
-    ${imgUrl?'<p class="hint" style="margin-top:8px">No celular, você também pode tocar e segurar a imagem para salvar.</p>':''}</div>`;
-  const t=calText();
-  h+=`<div class="card"><h3>Mensagem para o grupo</h3><pre class="pre">${esc(t)}</pre><div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t)}">Enviar no WhatsApp</a><button class="btn" data-a="copy">Copiar texto</button></div></div>`;
+  return cv;
+}
+async function gen(){try{await document.fonts.load('700 58px "Barlow Condensed"');await document.fonts.load('30px Barlow')}catch(e){}
+  const cv=drawImg();cv.toBlob(b=>{imgBlob=b;imgUrl=cv.toDataURL('image/png');render()},'image/png')}
+function saveImg(){if(!imgBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(imgBlob);a.download='folgas-'+mo+'.png';document.body.appendChild(a);a.click();a.remove()}
+async function shareImg(){if(!imgBlob)return;const file=new File([imgBlob],'folgas-'+mo+'.png',{type:'image/png'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Folgas e extras'});return}}catch(e){return}
+  toast('Toque e segure a imagem para compartilhar')}
+
+/* ---------- equipe ---------- */
+function fwChips(sel){return `<div class="fwchips">`+ORDER.filter(i=>i!==0).map(i=>`<button type="button" class="chip${sel.includes(i)?' on':''}" data-a="fw" data-v="${i}" aria-pressed="${sel.includes(i)}">${WS[i]}</button>`).join('')+'</div>'}
+function vTeam(){
+  const isX=teamSub==='extras';
+  let h=`<datalist id="fl">${roles().map(r=>`<option>${esc(r)}</option>`).join('')}</datalist>`;
+  h+=`<div class="seg" role="tablist" style="margin:0 0 14px"><button role="tab" aria-selected="${!isX}" class="${!isX?'on':''}" data-a="sub" data-v="equipe">Equipe (${S.fixos.length})</button><button role="tab" aria-selected="${isX}" class="${isX?'on':''}" data-a="sub" data-v="extras">Extras (${S.extras.length})</button></div>`;
+  if(adding){
+    h+=`<div class="addbox"><div class="step" style="margin-top:0">${isX?'Novo extra':'Novo funcionário'}</div>
+      <label class="fl" for="nn">Nome</label><input id="nn" autocomplete="off">
+      <label class="fl" for="nr">Função</label><input id="nr" list="fl" autocomplete="off">
+      ${isX?'<label class="fl" for="nt">WhatsApp com DDD</label><input id="nt" type="tel" inputmode="tel" placeholder="53 98415-3816"><label class="fl" for="np">Chave Pix</label><input id="np" autocomplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória">':`<label class="fl">Folga fixa toda semana (se tiver)</label>${fwChips([])}`}
+      <div class="row"><button class="btn pri" data-a="add">Adicionar</button><button class="btn ghost" data-a="cancel">Cancelar</button></div></div>`;
+  }else h+=`<div class="row" style="margin-top:0;margin-bottom:12px"><button class="btn pri" data-a="goadd" data-v="${isX?'extra':'fixo'}">${isX?'+ Adicionar extra':'+ Adicionar funcionário'}</button></div>`;
+  const row=(p,kind)=>{
+    const meta=kind==='fixo'?`${esc(p.r||'Sem função')}${(p.fw||[]).filter(i=>i).length?', folga fixa: '+ORDER.filter(i=>i&&p.fw.includes(i)).map(i=>WS[i].toLowerCase()).join(', '):''}`:`${esc(p.r||'Sem função')}${p.t?', '+esc(p.t):''}${p.pix?'<br>Pix: '+esc(p.pix):'<br><span style="color:var(--warn)">Sem chave Pix</span>'}`;
+    let x=`<div class="person"><button data-a="edit" data-id="${p.id}" aria-expanded="${editing===p.id}"><span><b>${esc(p.n)}</b><span class="pm">${meta}</span></span><span class="edit">${editing===p.id?'Fechar':'Editar'}</span></button>`;
+    if(kind==='extra'&&p.pix&&editing!==p.id)x+=`<div style="padding:0 14px 12px"><button class="btn" data-a="copypix" data-id="${p.id}">Copiar Pix</button></div>`;
+    if(editing===p.id)x+=`<div class="pform"><label class="fl" for="en">Nome</label><input id="en" value="${esc(p.n)}"><label class="fl" for="er">Função</label><input id="er" list="fl" value="${esc(p.r||'')}">${kind==='extra'?`<label class="fl" for="et">WhatsApp com DDD</label><input id="et" type="tel" inputmode="tel" value="${esc(p.t||'')}"><label class="fl" for="ep">Chave Pix</label><input id="ep" autocomplete="off" value="${esc(p.pix||'')}" placeholder="CPF, telefone, e-mail ou chave aleatória">`:`<label class="fl">Folga fixa toda semana</label>${fwChips(p.fw||[])}<p class="hint" style="margin-top:6px">Aparece automaticamente em todas as semanas. Dá para trocar dia a dia. A folga de domingo é marcada no próprio dia (1 por mês).</p>`}
+      <div class="row"><button class="btn pri" data-a="savep" data-id="${p.id}" data-v="${kind}">Salvar</button><button class="btn danger" data-a="rm" data-id="${p.id}" data-v="${kind}">Remover ${esc(p.n)}</button></div></div>`;
+    return x+'</div>';
+  };
+  if(!isX){
+    h+=S.fixos.length?S.fixos.map(p=>row(p,'fixo')).join(''):'<div class="empty">Ninguém cadastrado ainda.</div>';
+    h+=`<div class="sec"><h2>Dias em que a casa abre</h2></div><div class="card"><p class="hint">Dias desmarcados aparecem como fechados.</p><div class="fwchips">`+ORDER.map(i=>{const on=S.cfg.open.includes(i);return `<button class="chip${on?' on':''}" data-a="openday" data-v="${i}" aria-pressed="${on}">${WS[i]}</button>`}).join('')+`</div></div>`;
+  }else{
+    h+=S.extras.length?S.extras.map(p=>row(p,'extra')).join(''):'<div class="empty">Cadastre os extras para poder chamá-los pelo WhatsApp e pagar pelo Pix.</div>';
+  }
+  h+=`<div class="row" style="margin-top:24px"><span class="hint" style="margin:0">Conectado como ${esc(user&&user.email||'')}</span><button class="btn ghost" data-a="logout">Sair</button></div>`;
   return h;
 }
 
 function render(){
   persistUI();renderTabs();
-  $('app').innerHTML=tab==='dom'?vDomingos():tab==='share'?vShare():vEquipe();
+  $('app').innerHTML=tab==='week'?vWeek():tab==='month'?vMonth():vTeam();
 }
 
 /* ---------- events ---------- */
+function covObj(D,key){if(key.startsWith('r:'))return D.ref.find(r=>r.id===key.slice(2));return D.cob[key]}
 document.addEventListener('click',ev=>{
   const b=ev.target.closest('[data-a]');if(!b||b.tagName==='SELECT')return;
-  const a=b.dataset.a,id=b.dataset.id,k=b.dataset.d,v=b.dataset.v;
+  const a=b.dataset.a,id=b.dataset.id,k=b.dataset.d,v=b.dataset.v,key=b.dataset.key;
   if(a==='tab'){tab=id;editing=null;adding=false;render();window.scrollTo(0,0)}
-  else if(a==='mprev'||a==='mnext'){const [y,mm]=mo.split('-').map(Number);mo=iso(new Date(y,mm-1+(a==='mnext'?1:-1),1)).slice(0,7);imgUrl='';imgBlob=null;const l=sundays(mo),ns=nextSun();open=l.includes(ns)?ns:'';render()}
-  else if(a==='open'){open=open===id?'':id;render();if(open){const el=b.closest('.sun');el&&el.scrollIntoView({block:'nearest',behavior:'smooth'})}}
-  else if(a==='fol'){const D=mday(k),i=D.folgas.indexOf(id);if(i>=0){D.folgas.splice(i,1);delete D.cob[id]}else D.folgas.push(id);commit()}
-  else if(a==='mode'){const D=mday(k);if(v==='vend')D.cob[id]={v:1};else if(D.cob[id]&&D.cob[id].v)delete D.cob[id];commit()}
-  else if(a==='st'){const D=mday(k),c=D.cob[id];if(!c)return;c.s=v;if(v==='recusou'){c.rec=[...new Set([...(c.rec||[]),c.e])]}commit()}
-  else if(a==='goadd'){tab='team';adding=true;addKind=v||'fixo';editing=null;render();window.scrollTo(0,0);setTimeout(()=>$('nn')&&$('nn').focus(),0)}
-  else if(a==='kind'){const n=$('nn').value,r=$('nr').value;addKind=v;render();$('nn').value=n;$('nr').value=r;$('nn').focus()}
+  else if(a==='wprev'||a==='wnext'){wk=addDays(wk,a==='wnext'?7:-7);open='';render()}
+  else if(a==='thisweek'){wk=monday(iso(today()));open=iso(today());render()}
+  else if(a==='mprev'||a==='mnext'){const [y,mm]=mo.split('-').map(Number);mo=iso(new Date(y,mm-1+(a==='mnext'?1:-1),1)).slice(0,7);imgUrl='';imgBlob=null;render()}
+  else if(a==='open'){open=open===id?'':id;render();if(open){const el=$('d-'+id);el&&el.scrollIntoView({block:'nearest',behavior:'smooth'})}}
+  else if(a==='goday'){tab='week';wk=monday(id);open=id;render();setTimeout(()=>{const el=$('d-'+id);el&&el.scrollIntoView({block:'start',behavior:'smooth'})},30)}
+  else if(a==='exc'){const snap=clone(S);if(v==='reset')delete S.cfg.exc[k];else S.cfg.exc[k]=v==='open';open=v==='open'||(v==='reset'&&isOpen(k))?k:open;commit();
+    toast(v==='open'?'Aberto neste dia':v==='close'?'Fechado neste dia':'Voltou ao normal',snap)}
+  else if(a==='fol'){const D=mday(k),p=S.fixos.find(x=>x.id===id);const isOff=offList(k).includes(p);
+    if(!isOff&&toD(k).getDay()===0){const o=sundayOffs(p,k.slice(0,7));if(o.length){toast(`${p.n} já folga no domingo dia ${+o[0].slice(8)}. É só 1 domingo por mês.`);return}}
+    if(isOff){if(D.off.includes(id))D.off=D.off.filter(x=>x!==id);if(isFixa(p,k)&&!D.on.includes(id))D.on.push(id);delete D.cob[id]}
+    else{if(D.on.includes(id))D.on=D.on.filter(x=>x!==id);if(!isFixa(p,k))D.off.push(id)}
+    commit()}
+  else if(a==='mode'){const D=mday(k);if(v==='vend')D.cob[key]={v:1};else if(D.cob[key]&&D.cob[key].v)delete D.cob[key];commit()}
+  else if(a==='st'){const D=mday(k),c=covObj(D,key);if(!c)return;c.s=v;if(v==='recusou')c.rec=[...new Set([...(c.rec||[]),c.e])];commit()}
+  else if(a==='addref'){mday(k).ref.push({id:uid(),e:'',s:'',rec:[]});commit()}
+  else if(a==='rmref'){const D=mday(k),snap=clone(S);D.ref=D.ref.filter(r=>r.id!==key.slice(2));commit();toast('Reforço removido',snap)}
+  else if(a==='sub'){teamSub=v;adding=false;editing=null;render()}
+  else if(a==='copypix'){const e=extraById(id);if(e&&e.pix)(navigator.clipboard?navigator.clipboard.writeText(e.pix):Promise.reject()).then(()=>toast('Pix de '+e.n+' copiado')).catch(()=>toast('Pix: '+e.pix))}
+  else if(a==='goadd'){tab='team';adding=true;addKind=v||'fixo';teamSub=addKind==='extra'?'extras':'equipe';editing=null;render();window.scrollTo(0,0);setTimeout(()=>$('nn')&&$('nn').focus(),0)}
+  else if(a==='kind'){const n=$('nn').value,r=$('nr').value;addKind=v;render();$('nn').value=n;$('nr').value=r}
   else if(a==='cancel'){adding=false;render()}
+  else if(a==='fw'){const on=!b.classList.contains('on');b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)}
+  else if(a==='openday'){const i=+v;S.cfg.open=S.cfg.open.includes(i)?S.cfg.open.filter(x=>x!==i):[...S.cfg.open,i];commit()}
   else if(a==='add'){const n=$('nn').value.trim();if(!n){$('nn').focus();toast('Escreva o nome');return}
-    const r=$('nr').value.trim();if(addKind==='fixo')S.fixos.push({id:uid(),n,r});else S.extras.push({id:uid(),n,r,t:($('nt')||{}).value?$('nt').value.trim():''});
+    const r=$('nr').value.trim(),box=b.closest('.addbox');
+    if(addKind==='fixo')S.fixos.push({id:uid(),n,r,fw:[...box.querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v)});
+    else S.extras.push({id:uid(),n,r,t:$('nt')?$('nt').value.trim():'',pix:$('np')?$('np').value.trim():''});
     adding=false;commit();toast(n+' adicionado')}
   else if(a==='edit'){editing=editing===id?null:id;adding=false;render()}
   else if(a==='savep'){const L=v==='fixo'?S.fixos:S.extras,p=L.find(x=>x.id===id);if(!p)return;const n=$('en').value.trim();if(!n){$('en').focus();return}
-    p.n=n;p.r=$('er').value.trim();if(v==='extra')p.t=$('et').value.trim();editing=null;commit();toast('Alterações salvas')}
+    p.n=n;p.r=$('er').value.trim();if(v==='extra'){p.t=$('et').value.trim();p.pix=$('ep').value.trim()}else p.fw=[...b.closest('.pform').querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v);
+    editing=null;commit();toast('Alterações salvas')}
   else if(a==='rm'){const snap=clone(S),L=v==='fixo'?'fixos':'extras',p=S[L].find(x=>x.id===id);S[L]=S[L].filter(x=>x.id!==id);editing=null;commit();toast((p?p.n:'Pessoa')+' removido',snap)}
-  else if(a==='logout'){signOut(auth)}
+  else if(a==='logout')signOut(auth);
   else if(a==='gen')gen();
   else if(a==='dl')saveImg();
   else if(a==='shimg')shareImg();
-  else if(a==='copy'){const t=calText();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto copiado')).catch(()=>toast('Selecione o texto e copie manualmente'))}
+  else if(a==='copy'){const t=v==='week'?weekText():monthText();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto copiado')).catch(()=>toast('Selecione o texto e copie manualmente'))}
 });
 document.addEventListener('change',ev=>{
   const s=ev.target.closest('select[data-a="ext"]');if(!s)return;
-  const D=mday(s.dataset.d),old=D.cob[s.dataset.id]||{};
-  if(s.value)D.cob[s.dataset.id]={e:s.value,s:'chamado',rec:old.rec||[]};else delete D.cob[s.dataset.id];
+  const D=mday(s.dataset.d),key=s.dataset.key;
+  if(key.startsWith('r:')){const r=D.ref.find(x=>x.id===key.slice(2));if(r){r.e=s.value;r.s=s.value?'chamado':''}}
+  else{const old=D.cob[key]||{};if(s.value)D.cob[key]={e:s.value,s:'chamado',rec:old.rec||[]};else delete D.cob[key]}
   commit();
 });
-document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.tagName==='INPUT'){const f=ev.target.closest('.addbox,.pform');const b=f&&f.querySelector('.btn.pri');b&&b.click()}});
-
-function saveImg(){
-  if(!imgBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(imgBlob);a.download='folgas-'+mo+'.png';document.body.appendChild(a);a.click();a.remove();
-}
-async function shareImg(){
-  if(!imgBlob)return;const file=new File([imgBlob],'folgas-'+mo+'.png',{type:'image/png'});
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Folgas de domingo'});return}}catch(e){return}
-  toast('Toque e segure a imagem para compartilhar');
-}
-
+document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.tagName==='INPUT'&&ev.target.closest('.addbox,.pform')){const b=ev.target.closest('.addbox,.pform').querySelector('.btn.pri');b&&b.click()}});
 </script>
 </body>
 </html>
