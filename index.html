@@ -257,7 +257,7 @@ function status(k){
 function monthName(m){const [y,mm]=m.split('-').map(Number),t=new Date(y,mm-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});return t.charAt(0).toUpperCase()+t.slice(1)}
 function weekLabel(w){const e=addDays(w,6),a=toD(w),b=toD(e);return a.getMonth()===b.getMonth()?`${a.getDate()} a ${dm(e)}`:`${dm(w)} a ${dm(e)}`}
 function pendingAhead(){let n=0;const t=iso(today());for(let i=0;i<14;i++){const k=addDays(t,i);if(isOpen(k))n+=status(k).pend}return n}
-function roles(){const set=new Set(['Garçom','Churrasqueiro','Cozinheiro','Saladeiro','Caixa','Copa','Delivery','Chefe de Salão']);[...S.fixos,...S.extras].forEach(p=>p.r&&set.add(p.r));return[...set]}
+function roles(){const set=new Set(['Garçom','Sistema','Churrasqueiro','Cozinheiro','Saladeiro','Caixa','Copa','Delivery','Chefe de Salão']);[...S.fixos,...S.extras].forEach(p=>p.r&&set.add(p.r));return[...set]}
 
 /* ---------- view state ---------- */
 let ui={};try{ui=JSON.parse(sessionStorage.getItem('ui3')||'{}')}catch(e){}
