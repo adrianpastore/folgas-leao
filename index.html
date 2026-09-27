@@ -224,7 +224,8 @@ const K='folgas_extras_v2';
 function norm(s){
   s=s&&typeof s==='object'?s:{};
   const r={v:2,fixos:Array.isArray(s.fixos)?s.fixos:[],extras:Array.isArray(s.extras)?s.extras:[],
-    dias:s.dias&&typeof s.dias==='object'?s.dias:{},cfg:s.cfg&&Array.isArray(s.cfg.open)?s.cfg:{open:[0,1,2,3,4,5,6]}};
+    dias:s.dias&&typeof s.dias==='object'?s.dias:{},cfg:s.cfg&&Array.isArray(s.cfg.open)?s.cfg:{open:[0,2,3,4,5,6],seg:1}};
+  if(!r.cfg.seg){r.cfg.open=r.cfg.open.filter(i=>i!==1);r.cfg.seg=1;r._mig=1}
   if(!r.cfg.exc||typeof r.cfg.exc!=='object')r.cfg.exc={};
   r.fixos.forEach(p=>{if(!Array.isArray(p.fw))p.fw=[]});
   if(s.dom&&!s.dias){for(const k in s.dom){const o=s.dom[k]||{};r.dias[k]={off:[...(o.folgas||[])],on:[],cob:o.cob||{},ref:[]}}}
@@ -238,9 +239,12 @@ const isExc=k=>k in S.cfg.exc;
 const day=k=>S.dias[k]||{off:[],on:[],cob:{},ref:[]};
 const mday=k=>{const D=S.dias[k]||(S.dias[k]={});D.off=D.off||[];D.on=D.on||[];D.cob=D.cob||{};D.ref=D.ref||[];return D};
 const extraById=id=>S.extras.find(e=>e.id===id);
-const isFixa=(p,k)=>{const w=toD(k).getDay();return w!==0&&(p.fw||[]).includes(w)};
+const isFixa=(p,k)=>{const w=toD(k).getDay();return w!==0&&!(k in S.cfg.exc)&&(p.fw||[]).includes(w)};
+function compOn(k){const r={};for(const d in S.dias){const c=S.dias[d].comp;if(c&&isOpen(d))for(const pid in c)if(c[pid]===k)r[pid]=d}return r}
 function sundayOffs(p,m){return monthDays(m).filter(k=>toD(k).getDay()===0&&isOpen(k)&&offList(k).includes(p))}
-function offList(k){const D=day(k);return S.fixos.filter(p=>(isFixa(p,k)&&!(D.on||[]).includes(p.id))||(D.off||[]).includes(p.id))}
+function offList(k){const D=day(k),cp=compOn(k);return S.fixos.filter(p=>(isFixa(p,k)&&!(D.on||[]).includes(p.id))||(D.off||[]).includes(p.id)||cp[p.id])}
+const needsComp=k=>isExc(k)&&isOpen(k)&&!S.cfg.open.includes(toD(k).getDay());
+function compPend(k){if(!needsComp(k))return[];const c=day(k).comp||{},D=day(k);return S.fixos.filter(p=>!c[p.id]&&!(D.off||[]).includes(p.id))}
 const okCob=c=>!!(c&&(c.v||(c.e&&c.s==='confirmado'&&extraById(c.e))));
 const okRef=r=>!!(r&&r.e&&r.s==='confirmado'&&extraById(r.e));
 function status(k){
@@ -248,7 +252,7 @@ function status(k){
   const pendF=off.filter(p=>!okCob((D.cob||{})[p.id]));
   const pendR=ref.filter(r=>!okRef(r));
   const extras=[...off.map(p=>(D.cob||{})[p.id]).filter(c=>c&&c.e&&c.s==='confirmado'&&extraById(c.e)).map(c=>extraById(c.e)),...ref.filter(okRef).map(r=>extraById(r.e))];
-  return{D,off,ref,pend:pendF.length+pendR.length,extras};
+  return{D,off,ref,pend:pendF.length+pendR.length+compPend(k).length,extras};
 }
 function monthName(m){const [y,mm]=m.split('-').map(Number),t=new Date(y,mm-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});return t.charAt(0).toUpperCase()+t.slice(1)}
 function weekLabel(w){const e=addDays(w,6),a=toD(w),b=toD(e);return a.getMonth()===b.getMonth()?`${a.getDate()} a ${dm(e)}`:`${dm(w)} a ${dm(e)}`}
@@ -271,7 +275,7 @@ function persistUI(){try{sessionStorage.setItem('ui3',JSON.stringify({tab,wk,mo,
 function push(){
   if(!user)return;clearTimeout(wTimer);setSync(navigator.onLine?'saving':'local');
   wTimer=setTimeout(()=>{lastAt=Date.now();
-    setDoc(ref,clone({v:2,fixos:S.fixos,extras:S.extras,dias:S.dias,cfg:S.cfg,_by:me,_at:lastAt})).then(()=>setSync('ok')).catch(e=>{setSync('err');toast(e.code==='permission-denied'?'Seu usuário não tem permissão para editar':'Não foi possível salvar')})},450);
+    setDoc(ref,clone({v:3,fixos:S.fixos,extras:S.extras,dias:S.dias,cfg:S.cfg,_by:me,_at:lastAt})).then(()=>setSync('ok')).catch(e=>{setSync('err');toast(e.code==='permission-denied'?'Seu usuário não tem permissão para editar':'Não foi possível salvar')})},450);
 }
 function commit(){imgUrl='';imgBlob=null;saveLocal();push();render()}
 function startSync(){
@@ -282,9 +286,8 @@ function startSync(){
     const d=snap.data()||{};
     setSync(snap.metadata.fromCache&&!navigator.onLine?'local':'ok');
     if(d._by===me&&d._at===lastAt)return;
-    const wasOld=!d.dias&&d.dom;
-    S=norm(clone(d));saveLocal();imgUrl='';imgBlob=null;safeRender();
-    if(wasOld)push();
+    S=norm(clone(d));const mig=S._mig;delete S._mig;saveLocal();imgUrl='';imgBlob=null;safeRender();
+    if(mig)push();
   },e=>{setSync('err');if(e.code==='permission-denied')loginView('Este e-mail não tem acesso. Confira as regras do Firestore.')});
 }
 function safeRender(){const a=document.activeElement;if(a&&$('app').contains(a)&&a.tagName==='INPUT'){needsRender=true;return}render()}
@@ -376,10 +379,23 @@ function statusSeg(k,key,c,ex){
 function dayBody(k){
   const {D,off,ref}=status(k),isSun=toD(k).getDay()===0;
   const used=new Set([...Object.values(D.cob||{}).filter(c=>c.e&&c.s!=='recusou').map(c=>c.e),...ref.filter(r=>r.e&&r.s!=='recusou').map(r=>r.e)]);
-  let h=`<div class="step"><span>1</span>Quem folga neste dia?</div><p class="hint">Toque no nome para marcar ou tirar a folga.</p><div class="chips">`+
+  let h='';
+  if(needsComp(k)){
+    const cmp=D.comp||{},opts=[];for(let i=1;i<=13;i++){const d=addDays(k,i);if(isOpen(d)&&toD(d).getDay()!==0)opts.push(d)}
+    const nPend=compPend(k).length;
+    h+=`<div class="cov" style="margin-top:12px;border-color:var(--warn);background:var(--warn-2)"><div class="step" style="margin-top:0">Folga no lugar da ${WD[toD(k).getDay()].toLowerCase()}</div>
+      <p class="hint">A casa abre fora do normal e todos perdem a folga deste dia. Escolha outro dia para cada um folgar.${nPend?` <b style="color:var(--warn)">Faltam ${nPend}.</b>`:''}</p>`+
+      S.fixos.map(p=>{
+        if((D.off||[]).includes(p.id))return `<div style="margin-top:10px"><b>${esc(p.n)}</b> <span class="hint">folga neste dia, não precisa compensar</span></div>`;
+        return `<label class="fl" for="cp-${k}-${p.id}"><b style="color:var(--ink);font-size:15px">${esc(p.n)}</b> ${esc(p.r||'')}</label><select id="cp-${k}-${p.id}" data-a="comp" data-id="${p.id}" data-d="${k}"><option value="">Escolher dia da folga…</option>`+
+          opts.map(d=>{const n=offList(d).filter(x=>x.id!==p.id).length;return `<option value="${d}"${cmp[p.id]===d?' selected':''}>${WD[toD(d).getDay()]}, ${+d.slice(8)}/${d.slice(5,7)}${n?` (${n} já de folga)`:''}</option>`}).join('')+'</select>';
+      }).join('')+'</div>';
+  }
+  const cpOn=compOn(k);
+  h+=`<div class="step"><span>1</span>Quem folga neste dia?</div><p class="hint">Toque no nome para marcar ou tirar a folga.</p><div class="chips">`+
     S.fixos.map(p=>{const on=off.includes(p);const fixa=isFixa(p,k);
       const other=isSun&&!on?sundayOffs(p,k.slice(0,7)):[];
-      const sub=other.length?`já folga dia ${+other[0].slice(8)}`:fixa?(on?'folga fixa':'trocou a folga fixa'):(p.r||'');
+      const sub=cpOn[p.id]?`folga no lugar de ${WS[toD(cpOn[p.id]).getDay()].toLowerCase()} ${+cpOn[p.id].slice(8)}`:other.length?`já folga dia ${+other[0].slice(8)}`:fixa?(on?'folga fixa':'trocou a folga fixa'):(p.r||'');
       return `<button class="chip${on?' on':''}${other.length?' dis':''}" data-a="fol" data-id="${p.id}" data-d="${k}" aria-pressed="${on}"${other.length?' aria-disabled="true"':''}>${esc(p.n)}<small>${esc(sub)}</small></button>`}).join('')+'</div>'+
     (isSun?(()=>{const sem=S.fixos.filter(p=>!sundayOffs(p,k.slice(0,7)).length);return `<p class="hint" style="margin-top:8px">Domingo: cada um folga 1 por mês. ${sem.length?'Ainda sem domingo em '+monthName(k.slice(0,7)).split(' ')[0].toLowerCase()+': '+listNames(sem.map(p=>esc(p.n)))+'.':'Todos já têm o domingo do mês.'}</p>`})():'');
   if(off.length){
@@ -443,7 +459,7 @@ function vMonth(){
   return h;
 }
 function linesFor(k){const {D,off,ref}=status(k),L=[];
-  off.forEach(p=>{L.push([p.n,0]);const c=(D.cob||{})[p.id];if(okCob(c)&&c.e)L.push(['extra: '+extraById(c.e).n,1]);if(c&&c.v)L.push(['vendeu a folga',1])});
+  const cp=compOn(k);off.forEach(p=>{L.push([p.n+(cp[p.id]?' (compensa '+(+cp[p.id].slice(8))+'/'+cp[p.id].slice(5,7)+')':''),0]);const c=(D.cob||{})[p.id];if(okCob(c)&&c.e)L.push(['extra: '+extraById(c.e).n,1]);if(c&&c.v)L.push(['vendeu a folga',1])});
   ref.filter(okRef).forEach(r=>L.push(['reforço: '+extraById(r.e).n,1]));return L}
 function textFor(days){return days.filter(k=>isOpen(k)&&linesFor(k).length).map(k=>{const d=toD(k);return `*${WS[d.getDay()]} ${k.slice(8)}/${k.slice(5,7)}*\n`+linesFor(k).map(([t,s])=>s?'   '+t:'• '+t+' (folga)').join('\n')}).join('\n\n')}
 function weekText(){const b=textFor([...Array(7)].map((_,i)=>addDays(wk,i)));return `*Escala da semana – ${weekLabel(wk)}*\nChurrascaria Leão do Parque\n\n`+(b||'Sem folgas nem extras nesta semana.')}
@@ -534,6 +550,7 @@ document.addEventListener('click',ev=>{
   else if(a==='exc'){const snap=clone(S);if(v==='reset')delete S.cfg.exc[k];else S.cfg.exc[k]=v==='open';open=v==='open'||(v==='reset'&&isOpen(k))?k:open;commit();
     toast(v==='open'?'Aberto neste dia':v==='close'?'Fechado neste dia':'Voltou ao normal',snap)}
   else if(a==='fol'){const D=mday(k),p=S.fixos.find(x=>x.id===id);const isOff=offList(k).includes(p);
+    const cpd=compOn(k)[id];if(isOff&&cpd){delete S.dias[cpd].comp[id];delete D.cob[id];commit();toast(`Folga compensatória de ${p.n} removida. Escolha outro dia na ${WD[toD(cpd).getDay()].toLowerCase()} ${+cpd.slice(8)}.`);return}
     if(!isOff&&toD(k).getDay()===0){const o=sundayOffs(p,k.slice(0,7));if(o.length){toast(`${p.n} já folga no domingo dia ${+o[0].slice(8)}. É só 1 domingo por mês.`);return}}
     if(isOff){if(D.off.includes(id))D.off=D.off.filter(x=>x!==id);if(isFixa(p,k)&&!D.on.includes(id))D.on.push(id);delete D.cob[id]}
     else{if(D.on.includes(id))D.on=D.on.filter(x=>x!==id);if(!isFixa(p,k))D.off.push(id)}
@@ -566,6 +583,9 @@ document.addEventListener('click',ev=>{
   else if(a==='copy'){const t=v==='week'?weekText():monthText();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto copiado')).catch(()=>toast('Selecione o texto e copie manualmente'))}
 });
 document.addEventListener('change',ev=>{
+  const cs=ev.target.closest('select[data-a="comp"]');
+  if(cs){const D=mday(cs.dataset.d);D.comp=D.comp||{};const old=D.comp[cs.dataset.id];if(old&&S.dias[old]&&S.dias[old].cob)delete S.dias[old].cob[cs.dataset.id];
+    if(cs.value)D.comp[cs.dataset.id]=cs.value;else delete D.comp[cs.dataset.id];commit();return}
   const s=ev.target.closest('select[data-a="ext"]');if(!s)return;
   const D=mday(s.dataset.d),key=s.dataset.key;
   if(key.startsWith('r:')){const r=D.ref.find(x=>x.id===key.slice(2));if(r){r.e=s.value;r.s=s.value?'chamado':''}}
