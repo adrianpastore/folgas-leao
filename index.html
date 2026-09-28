@@ -288,9 +288,9 @@ const K='folgas_extras_v2';
 
 /* ---------- data ---------- */
 const DEF_AREAS=[
-  {id:'salao',n:'Salão',v:120,f:['Caixa','Copa','Salão','Gerência','Bebidas','Balança','Delivery']},
-  {id:'churrasqueira',n:'Churrasqueira',v:150,f:['Churrasqueiro','Passador','Auxiliar']},
-  {id:'cozinha',n:'Cozinha',v:150,f:['Auxiliar de Cozinheira','Cozinheiro','Saladeira']}];
+  {id:'salao',n:'Salão',v:90,f:['Caixa','Copa','Salão','Gerência','Bebidas','Balança','Delivery']},
+  {id:'churrasqueira',n:'Churrasqueira',v:100,f:['Churrasqueiro','Passador','Auxiliar']},
+  {id:'cozinha',n:'Cozinha',v:100,f:['Auxiliar de Cozinheira','Cozinheiro','Saladeira']}];
 function guessArea(r,areas){r=(r||'').trim().toLowerCase();if(!r)return '';
   for(const a of areas)if(a.f.some(f=>f.toLowerCase()===r))return a.id;
   if(/gar[çc]|sistema|chefe|sal[ãa]o|bebida|caixa|copa|delivery|balan/.test(r))return areas.find(a=>a.id==='salao')?'salao':'';
@@ -308,6 +308,8 @@ function norm(s){
   r.cfg.areas.forEach(a=>{if(typeof a.v!=='number'){const d=DEF_AREAS.find(x=>x.id===a.id);a.v=d?d.v:0;r._mig=1}
     if(!a.vd||typeof a.vd!=='object'){a.vd={};for(let i=0;i<7;i++)a.vd[i]=a.v;r._mig=1}});
   if(!r.cfg.fer||typeof r.cfg.fer!=='object')r.cfg.fer={};
+  if(r.cfg.vv!==2){const T={cozinha:[100,150],churrasqueira:[100,150],salao:[90,120]};
+    r.cfg.areas.forEach(a=>{const t=T[a.id];if(!t)return;a.vd={0:t[1],1:t[1],2:t[0],3:t[0],4:t[0],5:t[0],6:t[1]};a.v=t[0]});r.cfg.vv=2;r._mig=1}
   [...r.fixos,...r.extras].forEach(p=>{if(p.a===undefined){p.a=guessArea(p.r,r.cfg.areas);r._mig=1}});
   if(s.dom&&!s.dias){for(const k in s.dom){const o=s.dom[k]||{};r.dias[k]={off:[...(o.folgas||[])],on:[],cob:o.cob||{},ref:[]}}}
   return r;
@@ -326,7 +328,7 @@ function sundayOffs(p,m){return monthDays(m).filter(k=>toD(k).getDay()===0&&isOp
 function offList(k){const D=day(k),cp=compOn(k);return S.fixos.filter(p=>(isFixa(p,k)&&!(D.on||[]).includes(p.id))||(D.off||[]).includes(p.id)||cp[p.id])}
 const needsComp=k=>isExc(k)&&isOpen(k)&&!S.cfg.open.includes(toD(k).getDay());
 function compPend(k){if(!needsComp(k))return[];const c=day(k).comp||{},D=day(k);return S.fixos.filter(vis).filter(p=>!c[p.id]&&!(D.off||[]).includes(p.id))}
-const okCob=c=>!!(c&&(c.v||(c.e&&c.s==='confirmado'&&extraById(c.e))));
+const okCob=c=>!!(c&&(c.v||c.n||(c.e&&c.s==='confirmado'&&extraById(c.e))));
 const okRef=r=>!!(r&&r.e&&r.s==='confirmado'&&extraById(r.e));
 function status(k){
   const D=day(k),off=offList(k).filter(vis),ref=(D.ref||[]).filter(r=>!areaF||!r.e||(extraById(r.e)&&extraById(r.e).a===areaF));
@@ -357,14 +359,14 @@ let wk=ui.wk||monday(iso(today()));
 let mo=ui.mo||iso(today()).slice(0,7);
 let open=ui.open!==undefined?ui.open:iso(today());
 areaF=ui.af||'';
-const openAreas=new Set(ui.oa||[]);
+const openAreas=new Set(ui.oa||[]),openSecs=new Set(ui.os||[]);
 let teamSub=ui.sub||'equipe',editing=null,adding=false,addKind='fixo',imgUrl='',imgBlob=null,needsRender=false;
 
 /* ---------- sync (Firestore) ---------- */
 let ref=doc(fdb,'app','estado'),me=uid(),lastAt=0,wTimer=null,unsub=null,user=null;
 function setSync(k){const el=$('sync');const t={ok:'Sincronizado',saving:'Salvando…',local:'Offline: salvo no aparelho',err:'Erro ao salvar'}[k];el.className='sync '+k;el.querySelector('span').textContent=t}
 function saveLocal(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
-function persistUI(){try{sessionStorage.setItem('ui3',JSON.stringify({tab,wk,mo,open,sub:teamSub,af:areaF,oa:[...openAreas],fm:folMin}))}catch(e){}}
+function persistUI(){try{sessionStorage.setItem('ui3',JSON.stringify({tab,wk,mo,open,sub:teamSub,af:areaF,oa:[...openAreas],os:[...openSecs],fm:folMin}))}catch(e){}}
 function push(){
   if(!user)return;clearTimeout(wTimer);setSync(navigator.onLine?'saving':'local');
   wTimer=setTimeout(()=>{lastAt=Date.now();
@@ -473,6 +475,7 @@ function usedSet(k){const {D,ref}=status(k);return new Set([...Object.values(D.c
 function covState(p,D){
   const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e);
   if(c.v)return['ok','Vendeu a folga'];
+  if(c.n)return['ok','Não precisa cobrir'];
   if(ex&&c.s==='confirmado')return['ok','Coberto por '+ex.n];
   if(ex&&c.s==='chamado')return['warn','Esperando '+ex.n];
   if(ex&&c.s==='recusou')return['bad','Recusou, chamar outro'];
@@ -570,10 +573,11 @@ function covEditor(k,key){
     return {t:'Extra de reforço',s:longDay(k),b};
   }
   const p=S.fixos.find(x=>x.id===key);if(!p)return null;
-  const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v,st=covState(p,D);
+  const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v,nao=!!c.n,st=covState(p,D);
   let b=`<p class="st ${st[0]}" style="margin:12px 0 0">${esc(st[1])}</p>
-    <div class="seg" role="group"><button class="${!vend?'on':''}" data-a="mode" data-v="extra" data-key="${p.id}" data-d="${k}">Chamar extra</button><button class="${vend?'on':''}" data-a="mode" data-v="vend" data-key="${p.id}" data-d="${k}">Vendeu a folga</button></div>`;
+    <div class="seg" role="group"><button class="${!vend&&!nao?'on':''}" data-a="mode" data-v="extra" data-key="${p.id}" data-d="${k}">Chamar extra</button><button class="${vend?'on':''}" data-a="mode" data-v="vend" data-key="${p.id}" data-d="${k}">Vendeu a folga</button><button class="${nao?'on':''}" data-a="mode" data-v="nao" data-key="${p.id}" data-d="${k}">Não precisa</button></div>`;
   if(vend)b+=`<p class="note ok">${esc(p.n)} vem trabalhar normalmente.</p>`;
+  else if(nao)b+=`<p class="note ok">A folga de ${esc(p.n)} não precisa de reposição neste dia.</p>`;
   else if(!S.extras.length)b+=`<p class="note">Nenhum extra cadastrado ainda.</p><div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div>`;
   else{b+=extraSelect(k,p.id,c.e,used,p.r,c.rec,`Extra para o lugar de ${esc(p.n)}`,p.a);
     if(ex){b+=statusSeg(k,p.id,c,ex);if(c.s!=='recusou')b+=waBtn(ex,k,`, no lugar de ${p.n}${p.r?' ('+p.r+')':''}`,c.s)}}
@@ -610,14 +614,27 @@ function vMonth(){
     h+=`<button class="cal-d${sheet===k?' sel':''}${k===t?' today':''}${isExc(k)?' special':''}${pend&&k>=t?' pend':''}" data-a="goday" data-id="${k}" aria-label="${lbl}"><span class="cn">${+k.slice(8)}</span><span class="dots">${dots}</span></button>`;
   });
   h+=`</div><div class="legend"><span><i class="dot"></i> folga</span><span><i class="dot g"></i> extra confirmado</span><span><i style="width:12px;height:12px;border-radius:3px;box-shadow:inset 0 0 0 2px var(--warn);display:inline-block"></i> falta resolver</span><span><i style="width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--warn);display:inline-block"></i> abertura especial</span></div></div>`;
-  // tally
+  // seções recolhíveis
   const cnt={},ext={};days.forEach(k=>{if(!isOpen(k))return;const s=status(k);s.off.forEach(p=>cnt[p.id]=(cnt[p.id]||0)+1);s.extras.forEach(e=>ext[e.id]=(ext[e.id]||0)+1)});
-  h+=`<div class="card"><h3>Resumo do mês</h3><p class="hint">Folgas de cada fixo (com o domingo do mês) e dias trabalhados pelos extras.</p><div class="tally">`+
-    S.fixos.filter(vis).map(p=>{const sd=sundayOffs(p,mo);return `<span>${esc(p.n)}<small style="display:block;color:${sd.length?'var(--mut)':'var(--warn)'};font-size:13px">${sd.length?'Domingo: dia '+(+sd[0].slice(8)):'Ainda sem folga de domingo'}</small></span><b>${cnt[p.id]||0} ${(cnt[p.id]||0)===1?'folga':'folgas'}</b>`}).join('')+
-    S.extras.filter(vis).filter(e=>ext[e.id]).map(e=>`<span>${esc(e.n)} <small style="color:var(--mut)">(extra)</small></span><b>${ext[e.id]} ${ext[e.id]===1?'dia':'dias'}</b>`).join('')+`</div></div>`;
-  h+=`<div class="card"><h3>Calendário para o grupo</h3>${imgUrl?`<img class="gi" src="${imgUrl}" alt="Calendário de folgas de ${monthName(mo)}"><div class="row"><button class="btn pri" data-a="dl">Salvar imagem</button>${navigator.canShare?'<button class="btn" data-a="shimg">Compartilhar</button>':''}</div><p class="hint" style="margin-top:8px">No celular, dá para tocar e segurar a imagem para salvar.</p>`:`<p class="hint">Gera uma imagem do mês com os nomes de quem folga e dos extras.</p><div class="row"><button class="btn pri" data-a="gen">Criar imagem do mês</button></div>`}</div>`;
+  const fx=S.fixos.filter(vis),semDom=fx.filter(p=>!sundayOffs(p,mo).length),totF=fx.reduce((a,p)=>a+(cnt[p.id]||0),0);
+  const pays=days.flatMap(payEntries),totV=pays.reduce((a,x)=>a+x.v,0);
+  const coll=(id,title,sum,warn,body)=>{const o=openSecs.has(id);return `<section class="sun${o?' open':''}" style="margin-bottom:10px"><button class="sun-h" data-a="tgsec" data-id="${id}" aria-expanded="${o}" style="grid-template-columns:1fr auto auto">
+    <span class="dmeta"><b style="font:700 20px/1.1 var(--cond)">${title}</b><small${warn?' style="color:var(--warn);font-weight:600"':''}>${sum}</small></span><span></span><span aria-hidden="true" style="color:var(--mut);font-size:18px">${o?'▴':'▾'}</span></button>${o?`<div class="sun-b" style="padding-top:10px">${body}</div>`:''}</section>`};
+  // resumo
+  let rb='';
+  byArea(fx).forEach(([n,items])=>{rb+=`<div class="agrp"><b>${esc(n)}</b></div><div class="tally">`+items.map(p=>{const sd=sundayOffs(p,mo);return `<span>${esc(p.n)}<small style="display:block;color:${sd.length?'var(--mut)':'var(--warn)'};font-size:13px">${sd.length?'Domingo: dia '+(+sd[0].slice(8)):'Ainda sem folga de domingo'}</small></span><b>${cnt[p.id]||0} ${(cnt[p.id]||0)===1?'folga':'folgas'}</b>`}).join('')+'</div>'});
+  if(semDom.length)rb=`<p class="note" style="margin:0 0 4px;color:var(--warn)"><b>Sem domingo ainda:</b> ${listNames(semDom.map(p=>esc(p.n)))}</p>`+rb;
+  h+=coll('resumo','Resumo do mês',`${totF} ${totF===1?'folga':'folgas'} no mês${semDom.length?` · ${semDom.length} sem domingo`:' · todos com domingo'}`,semDom.length,rb||'<p class="hint">Ninguém cadastrado.</p>');
+  // extras do mês
+  const byE={};pays.forEach(x=>{(byE[x.e.id]=byE[x.e.id]||{e:x.e,n:0,v:0});byE[x.e.id].n++;byE[x.e.id].v+=x.v});
+  const eb=Object.values(byE).sort((a,b)=>a.e.n.localeCompare(b.e.n,'pt-BR'));
+  h+=coll('extras','Extras do mês',eb.length?`${pays.length} ${pays.length===1?'diária':'diárias'} · ${brl(totV)}`:'Nenhum extra confirmado',false,
+    eb.length?`<div class="lbox">`+eb.map(g=>`<div class="prow"><div class="lr-t"><b>${esc(g.e.n)}</b><small>${esc([areaName(g.e.a),g.e.r].filter(Boolean).join(' · '))} · ${g.n} ${g.n===1?'diária':'diárias'}</small><small>Pix: ${esc(g.e.pix||'não cadastrado')}</small></div><div class="pv"><b>${brl(g.v)}</b></div></div>`).join('')+`<div class="ptot"><span>Total do mês</span><b>${brl(totV)}</b></div></div>`:'<p class="hint">Quando um extra confirmar, ele aparece aqui com o valor.</p>');
+  // imagem
+  h+=coll('imagem','Calendário para o grupo',imgUrl?'Imagem pronta':'Gerar imagem do mês',false,
+    imgUrl?`<img class="gi" src="${imgUrl}" alt="Calendário de folgas de ${monthName(mo)}"><div class="row"><button class="btn pri" data-a="dl">Salvar imagem</button>${navigator.canShare?'<button class="btn" data-a="shimg">Compartilhar</button>':''}</div><p class="hint" style="margin-top:8px">No celular, dá para tocar e segurar a imagem para salvar.</p>`:`<p class="hint">Gera uma imagem do mês com os nomes de quem folga e dos extras.</p><div class="row"><button class="btn pri" data-a="gen">Criar imagem do mês</button></div>`);
   const txt=monthText();
-  h+=`<div class="card"><h3>Mensagem do mês</h3><pre class="pre">${esc(txt)}</pre><div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">Enviar no WhatsApp</a><button class="btn" data-a="copy" data-v="month">Copiar texto</button></div></div>`;
+  h+=coll('msg','Mensagem do mês','Texto pronto para o WhatsApp',false,`<pre class="pre" style="margin-top:0">${esc(txt)}</pre><div class="row"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">Enviar no WhatsApp</a><button class="btn" data-a="copy" data-v="month">Copiar texto</button></div>`);
   return h;
 }
 function linesFor(k){const {D,off,ref}=status(k),L=[];
@@ -782,10 +799,11 @@ document.addEventListener('click',ev=>{
     if(isOff){if(D.off.includes(id))D.off=D.off.filter(x=>x!==id);if(isFixa(p,k)&&!D.on.includes(id))D.on.push(id);delete D.cob[id]}
     else{if(D.on.includes(id))D.on=D.on.filter(x=>x!==id);if(!isFixa(p,k))D.off.push(id)}
     commit()}
-  else if(a==='mode'){const D=mday(k);if(v==='vend')D.cob[key]={v:1};else if(D.cob[key]&&D.cob[key].v)delete D.cob[key];commit()}
+  else if(a==='mode'){const D=mday(k);if(v==='vend')D.cob[key]={v:1};else if(v==='nao')D.cob[key]={n:1};else if(D.cob[key]&&(D.cob[key].v||D.cob[key].n))delete D.cob[key];commit()}
   else if(a==='st'){const D=mday(k),c=covObj(D,key);if(!c)return;c.s=v;if(v==='recusou')c.rec=[...new Set([...(c.rec||[]),c.e])];commit()}
   else if(a==='addref'){const nid=uid();mday(k).ref.push({id:nid,e:'',s:'',rec:[]});cov={k,key:'r:'+nid};commit()}
   else if(a==='rmref'){const D=mday(k),snap=clone(S);D.ref=D.ref.filter(r=>r.id!==key.slice(2));cov=null;commit();toast('Reforço removido',snap)}
+  else if(a==='tgsec'){openSecs.has(id)?openSecs.delete(id):openSecs.add(id);render()}
   else if(a==='tgarea'){openAreas.has(id)?openAreas.delete(id):openAreas.add(id);render()}
   else if(a==='areaf'){areaF=v;imgUrl='';imgBlob=null;render()}
   else if(a==='addfunc'){const ar=areaById(id),inp=$('nf-'+id),f=inp.value.trim();if(!f){inp.focus();return}if(!ar.f.some(x=>same(x,f)))ar.f.push(f);commit();toast(f+' adicionada em '+ar.n)}
@@ -810,7 +828,7 @@ document.addEventListener('click',ev=>{
     editing=null;commit();toast('Alterações salvas')}
   else if(a==='rm'){const snap=clone(S),L=v==='fixo'?'fixos':'extras',p=S[L].find(x=>x.id===id);S[L]=S[L].filter(x=>x.id!==id);editing=null;commit();toast((p?p.n:'Pessoa')+' removido',snap)}
   else if(a==='logout')signOut(auth);
-  else if(a==='gen')gen();
+  else if(a==='gen'){openSecs.add('imagem');gen()}
   else if(a==='dl')saveImg();
   else if(a==='shimg')shareImg();
   else if(a==='copy'){const t=v==='week'?weekText():monthText();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto copiado')).catch(()=>toast('Selecione o texto e copie manualmente'))}
