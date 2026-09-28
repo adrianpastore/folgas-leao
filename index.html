@@ -25,7 +25,7 @@
   --band:#15301f;--green:#8fd0a8;--green-2:#1f3326;
   --wine:#ee8593;--wine-2:#3b1d23;--ok:#74d29c;--ok-2:#173424;--warn:#eab466;--warn-2:#382a14}
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + var(--hh,0px) + 8px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-tap-highlight-color:transparent}
 button,select,input{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -33,10 +33,23 @@ button{cursor:pointer}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 /* header */
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:4}
+.hdr::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:env(safe-area-inset-top,0px);background:var(--band)}
 .top{background:var(--band);color:var(--band-ink);border-bottom:4px solid #8e1f2f}
-.top-in{max-width:680px;margin:0 auto;padding:14px 16px 12px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:4px 12px}
+#hsub{background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 4px 10px rgba(0,0,0,.06)}
+#hsub:empty{display:none}
+.hsub-in{max-width:680px;margin:0 auto;padding:8px 14px 8px}
+#hsub .mnav{margin:0 0 6px}
+#hsub .mnav h2{font-size:20px!important}
+#hsub .ib{width:38px;height:38px;font-size:20px}
+#hsub .fwchips{margin:0!important;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start!important;gap:6px;scrollbar-width:none;padding-bottom:2px}
+#hsub .fwchips::-webkit-scrollbar{display:none}
+#hsub .fwchips .chip{flex:0 0 auto;white-space:nowrap}
+#hsub .fwchips .chip:first-child{margin-left:auto}#hsub .fwchips .chip:last-child{margin-right:auto}
+#hsub .chip{min-height:34px!important;padding:4px 10px!important;font-size:15px}
+.top-in{max-width:680px;margin:0 auto;padding:10px 16px 9px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:4px 12px}
 .brand small{display:block;font-size:13px;opacity:.8;letter-spacing:.02em}
-.brand h1{margin:0;font:700 26px/1 var(--cond);letter-spacing:.01em;white-space:nowrap}
+.brand h1{margin:0;font:700 23px/1 var(--cond);letter-spacing:.01em;white-space:nowrap}
 .sync{font-size:12px;opacity:.85;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .sync i{width:8px;height:8px;border-radius:50%;background:#9fd8b3;display:inline-block}
 .sync.saving i{background:#f3c46b}.sync.err i,.sync.local i{background:#f2a0a9}
@@ -138,7 +151,55 @@ select,input{width:100%;border:1px solid var(--line);background:var(--paper);bor
 .tabs button.on{color:var(--wine);font-weight:600}
 .tabs button.on::before{content:"";position:absolute;top:0;left:25%;right:25%;height:3px;background:var(--wine);border-radius:0 0 3px 3px}
 .badge{position:absolute;top:6px;left:calc(50% + 8px);background:var(--warn);color:#fff;border-radius:999px;font-size:11px;min-width:18px;height:18px;line-height:18px;padding:0 5px;font-weight:700}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 14px;display:flex;gap:14px;align-items:center;font-size:15px;z-index:6;max-width:calc(100% - 28px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.cal-d .fech{font-size:10px;font-weight:600;color:var(--mut);letter-spacing:.02em}
+.cal-d.closed{opacity:.55;cursor:pointer}
+.cal-d .cnt{font-size:10px;font-weight:600;color:var(--mut)}
+.cal-d.sel{outline:2px solid var(--green);outline-offset:-2px}
+#sheet{position:fixed;inset:0;z-index:8}
+#covm{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center}
+#covm[hidden]{display:none}
+@media (min-width:600px){#covm{align-items:center}}
+.cm{position:relative;width:100%;max-width:520px;max-height:82vh;max-height:82dvh;background:var(--paper);border-radius:18px 18px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.3);animation:shup .16s ease-out}
+@media (min-width:600px){.cm{border-radius:18px}}
+.cm-h{display:flex;gap:10px;align-items:center;padding:14px 14px 10px;border-bottom:1px solid var(--line)}
+.cm-h b{display:block;font:700 21px/1.15 var(--cond)}
+.cm-h small{display:block;color:var(--mut);font-size:13px}
+.cm-h .ib{width:38px;height:38px;font-size:16px}
+.cm-b{overflow-y:auto;padding:0 16px 14px}
+.cm-f{padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}
+.vgrid label{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:600;color:var(--mut)}
+.vgrid input{min-height:40px;padding:6px 8px;text-align:right}
+.prow{display:flex;gap:10px;align-items:flex-start;padding:10px 12px}
+.prow+.prow{border-top:1px solid var(--line)}
+.prow .lr-t small{white-space:normal}
+.pv{display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right}
+.pv b{font-size:16px}.pv small{color:var(--mut);font-size:12px}
+.ptot{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-top:2px solid var(--line);background:var(--bg);font-weight:600}
+.ptot b{font-size:18px;color:var(--green)}
+.lbox{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper);margin-top:6px}
+.lrow{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;min-height:54px}
+.lrow+.lrow{border-top:1px solid var(--line)}
+.lrow:hover{background:var(--bg)}
+.lrow:focus-visible{outline:3px solid var(--wine);outline-offset:-3px}
+.lr-t{flex:1;min-width:0}.lr-t b{display:block;font-weight:600}.lr-t small{display:block;color:var(--mut);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .st{text-align:right;max-width:46%}
+.lr-c{color:var(--mut);font-size:20px}
+.sec-h{all:unset;box-sizing:border-box;cursor:pointer;display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:14px;padding:4px 0}
+.sec-h:focus-visible{outline:3px solid var(--wine)}
+.sec-s{font-size:13px;color:var(--mut);font-weight:600}
+#sheet[hidden]{display:none}
+.sh-bg{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.sh{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:680px;max-height:88vh;max-height:88dvh;background:var(--paper);border-radius:18px 18px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.25);animation:shup .18s ease-out}
+@keyframes shup{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+.sh-h{display:flex;align-items:center;gap:8px;padding:12px 12px 10px;border-bottom:1px solid var(--line)}
+.sh-h .ib{width:38px;height:38px;font-size:18px;flex:0 0 auto}
+.sh-t{flex:1;min-width:0}
+.sh-t .dname{text-align:left}
+.sh-t .pill{font:600 12px var(--body);text-transform:none;letter-spacing:0;padding:2px 8px}
+.sh-t b{display:block;font:700 22px/1.1 var(--cond);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-b{overflow-y:auto;padding:0 16px calc(20px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 14px;display:flex;gap:14px;align-items:center;font-size:15px;z-index:9;max-width:calc(100% - 28px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .toast button{background:transparent;border:0;color:inherit;font-weight:700;text-decoration:underline;padding:4px}
 .toast[hidden]{display:none}
 /* v2 */
@@ -178,12 +239,14 @@ select,input{width:100%;border:1px solid var(--line);background:var(--paper);bor
 </style>
 </head>
 <body>
-<header class="top"><div class="top-in">
+<div class="hdr" id="hdr"><header class="top"><div class="top-in">
   <div class="brand"><small>Leão do Parque</small><h1>Folgas e extras</h1></div>
   <div class="sync local" id="sync"><i></i><span>Conectando…</span></div>
-</div></header>
+</div></header><div id="hsub"></div></div>
 <main id="app"></main>
 <nav class="tabs" id="tabs"></nav>
+<div id="sheet" hidden></div>
+<div id="covm" hidden></div>
 <div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastUndo" hidden>Desfazer</button></div>
 <script type="application/json" id="state">{"fixos":[{"id":"r1oopz","n":"Rafael","r":"Delivery"},{"id":"t0zgcs","n":"Abel","r":"Cozinheiro"},{"id":"2zkqs5","n":"Mauricio","r":"Chefe de Salão"},{"id":"c16rto","n":"Josué","r":"Copa"},{"id":"snelgp","n":"Luis","r":"Churrasqueiro"}],"extras":[{"id":"yilr4q","n":"Adrian","t":"53984153816","r":"Delivery"}],"dom":{"2026-09-27":{"folgas":["r1oopz","t0zgcs"],"cob":{"r1oopz":{"v":1}}},"2026-10-04":{"folgas":["r1oopz","t0zgcs"],"cob":{}},"2026-10-11":{"folgas":["2zkqs5"],"cob":{}},"2026-10-25":{"folgas":["snelgp"],"cob":{}},"2026-10-18":{"folgas":["c16rto"],"cob":{}},"2026-09-06":{"folgas":["t0zgcs"],"cob":{}},"2026-09-13":{"folgas":["2zkqs5"],"cob":{}},"2026-09-20":{"folgas":["c16rto","snelgp"],"cob":{}}}}</script>
 <script type="module">
@@ -225,9 +288,9 @@ const K='folgas_extras_v2';
 
 /* ---------- data ---------- */
 const DEF_AREAS=[
-  {id:'salao',n:'Salão',f:['Caixa','Copa','Salão','Gerência','Bebidas','Balança','Delivery']},
-  {id:'churrasqueira',n:'Churrasqueira',f:['Churrasqueiro','Passador','Auxiliar']},
-  {id:'cozinha',n:'Cozinha',f:['Auxiliar de Cozinheira','Cozinheiro','Saladeira']}];
+  {id:'salao',n:'Salão',v:120,f:['Caixa','Copa','Salão','Gerência','Bebidas','Balança','Delivery']},
+  {id:'churrasqueira',n:'Churrasqueira',v:150,f:['Churrasqueiro','Passador','Auxiliar']},
+  {id:'cozinha',n:'Cozinha',v:150,f:['Auxiliar de Cozinheira','Cozinheiro','Saladeira']}];
 function guessArea(r,areas){r=(r||'').trim().toLowerCase();if(!r)return '';
   for(const a of areas)if(a.f.some(f=>f.toLowerCase()===r))return a.id;
   if(/gar[çc]|sistema|chefe|sal[ãa]o|bebida|caixa|copa|delivery|balan/.test(r))return areas.find(a=>a.id==='salao')?'salao':'';
@@ -242,6 +305,9 @@ function norm(s){
   if(!r.cfg.exc||typeof r.cfg.exc!=='object')r.cfg.exc={};
   r.fixos.forEach(p=>{if(!Array.isArray(p.fw))p.fw=[]});
   if(!Array.isArray(r.cfg.areas)){r.cfg.areas=clone(DEF_AREAS);r._mig=1}
+  r.cfg.areas.forEach(a=>{if(typeof a.v!=='number'){const d=DEF_AREAS.find(x=>x.id===a.id);a.v=d?d.v:0;r._mig=1}
+    if(!a.vd||typeof a.vd!=='object'){a.vd={};for(let i=0;i<7;i++)a.vd[i]=a.v;r._mig=1}});
+  if(!r.cfg.fer||typeof r.cfg.fer!=='object')r.cfg.fer={};
   [...r.fixos,...r.extras].forEach(p=>{if(p.a===undefined){p.a=guessArea(p.r,r.cfg.areas);r._mig=1}});
   if(s.dom&&!s.dias){for(const k in s.dom){const o=s.dom[k]||{};r.dias[k]={off:[...(o.folgas||[])],on:[],cob:o.cob||{},ref:[]}}}
   return r;
@@ -285,7 +351,8 @@ function roles(){const set=new Set(['Garçom','Sistema','Churrasqueiro','Cozinhe
 
 /* ---------- view state ---------- */
 let ui={};try{ui=JSON.parse(sessionStorage.getItem('ui3')||'{}')}catch(e){}
-let tab=ui.tab||'week';
+let tab=ui.tab==='team'?'team':'cal';
+let sheet='',cov=null,folMin=!!ui.fm;
 let wk=ui.wk||monday(iso(today()));
 let mo=ui.mo||iso(today()).slice(0,7);
 let open=ui.open!==undefined?ui.open:iso(today());
@@ -297,7 +364,7 @@ let teamSub=ui.sub||'equipe',editing=null,adding=false,addKind='fixo',imgUrl='',
 let ref=doc(fdb,'app','estado'),me=uid(),lastAt=0,wTimer=null,unsub=null,user=null;
 function setSync(k){const el=$('sync');const t={ok:'Sincronizado',saving:'Salvando…',local:'Offline: salvo no aparelho',err:'Erro ao salvar'}[k];el.className='sync '+k;el.querySelector('span').textContent=t}
 function saveLocal(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
-function persistUI(){try{sessionStorage.setItem('ui3',JSON.stringify({tab,wk,mo,open,sub:teamSub,af:areaF,oa:[...openAreas]}))}catch(e){}}
+function persistUI(){try{sessionStorage.setItem('ui3',JSON.stringify({tab,wk,mo,open,sub:teamSub,af:areaF,oa:[...openAreas],fm:folMin}))}catch(e){}}
 function push(){
   if(!user)return;clearTimeout(wTimer);setSync(navigator.onLine?'saving':'local');
   wTimer=setTimeout(()=>{lastAt=Date.now();
@@ -320,7 +387,7 @@ function safeRender(){const a=document.activeElement;if(a&&$('app').contains(a)&
 document.addEventListener('focusout',()=>{if(needsRender){needsRender=false;setTimeout(render,0)}});
 
 function loginView(err){
-  $('tabs').innerHTML='';$('sync').style.visibility='hidden';
+  $('tabs').innerHTML='';$('hsub').innerHTML='';$('sync').style.visibility='hidden';
   $('app').innerHTML=`<div class="card" style="margin-top:20px"><h3>Entrar</h3><p class="hint">Use o e-mail e a senha cadastrados no Firebase.</p>
   <label class="fl" for="le">E-mail</label><input id="le" type="email" autocomplete="username">
   <label class="fl" for="lp">Senha</label><input id="lp" type="password" autocomplete="current-password">
@@ -352,13 +419,13 @@ $('toastUndo').onclick=()=>{if(undoSnap){S=undoSnap;undoSnap=null;$('toast').hid
 
 /* ---------- tabs ---------- */
 const ICON={
- week:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M7.5 14h9"/></svg>',
+ cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M7.5 14h9"/></svg>',
  month:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 13.5h.01M12 13.5h.01M16 13.5h.01M8 17h.01M12 17h.01" stroke-width="2.6" stroke-linecap="round"/></svg>',
  team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.1 4 1.6 4.6 4.3"/></svg>'
 };
 function renderTabs(){
   const p=pendingAhead();
-  const T=[['week','Semana',p],['month','Mês',0],['team','Equipe',0]];
+  const T=[['cal','Calendário',p],['team','Equipe',0]];
   $('tabs').innerHTML='<div class="tabs-in">'+T.map(([k,l,b])=>`<button class="${tab===k?'on':''}" data-a="tab" data-id="${k}" aria-current="${tab===k?'page':'false'}">${ICON[k]}${l}${b?`<span class="badge" aria-label="${b} pendentes nos próximos 14 dias">${b}</span>`:''}</button>`).join('')+'</div>';
 }
 
@@ -366,7 +433,7 @@ function renderTabs(){
 function vWeek(){
   if(!S.fixos.length)return `<div class="empty"><p>Para começar, cadastre a equipe.</p><button class="btn pri" data-a="tab" data-id="team">Cadastrar equipe</button></div>`;
   const t=iso(today());
-  let h=`<div class="mnav"><button class="ib" data-a="wprev" aria-label="Semana anterior">‹</button><h2 style="font-size:21px">${weekLabel(wk)}</h2><button class="ib" data-a="wnext" aria-label="Próxima semana">›</button></div>`+areaBar();
+  let h='';
   const days=[...Array(7)].map((_,i)=>addDays(wk,i));
   const pd=days.filter(k=>isOpen(k)&&k>=t&&status(k).pend).length;
   h+=`${wk!==monday(t)?`<div style="text-align:center;margin-bottom:6px"><button class="btn ghost" data-a="thisweek" style="min-height:36px;padding:4px 12px">Voltar para esta semana</button></div>`:''}<p class="lead">${pd?`${pd} ${pd===1?'dia precisa':'dias precisam'} de atenção`:'Toque num dia para marcar folgas e extras'}</p>`;
@@ -402,79 +469,145 @@ function statusSeg(k,key,c,ex){
   if(c.s==='recusou')x+=`<p class="note bad">Escolha outro extra na lista acima.</p>`;
   return x;
 }
+function usedSet(k){const {D,ref}=status(k);return new Set([...Object.values(D.cob||{}).filter(c=>c.e&&c.s!=='recusou').map(c=>c.e),...(D.ref||[]).filter(r=>r.e&&r.s!=='recusou').map(r=>r.e)])}
+function covState(p,D){
+  const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e);
+  if(c.v)return['ok','Vendeu a folga'];
+  if(ex&&c.s==='confirmado')return['ok','Coberto por '+ex.n];
+  if(ex&&c.s==='chamado')return['warn','Esperando '+ex.n];
+  if(ex&&c.s==='recusou')return['bad','Recusou, chamar outro'];
+  return['bad','Sem cobertura'];
+}
+function refState(r){const ex=r.e&&extraById(r.e);
+  if(!ex)return['bad','Escolher extra'];if(r.s==='confirmado')return['ok','Confirmado'];if(r.s==='recusou')return['bad','Recusou'];return['warn','Esperando resposta']}
+const lrow=(a,key,k,title,sub,st)=>`<button class="lrow" data-a="${a}" data-key="${key}" data-d="${k}"><span class="lr-t"><b>${title}</b>${sub?`<small>${sub}</small>`:''}</span><span class="st ${st[0]}">${esc(st[1])}</span><span class="lr-c" aria-hidden="true">›</span></button>`;
 function dayBody(k){
   const {D,off,ref}=status(k),isSun=toD(k).getDay()===0;
-  const used=new Set([...Object.values(D.cob||{}).filter(c=>c.e&&c.s!=='recusou').map(c=>c.e),...ref.filter(r=>r.e&&r.s!=='recusou').map(r=>r.e)]);
   let h='';
   if(needsComp(k)){
-    const cmp=D.comp||{},opts=[];for(let i=1;i<=13;i++){const d=addDays(k,i);if(isOpen(d)&&toD(d).getDay()!==0)opts.push(d)}
-    const nPend=compPend(k).length;
-    h+=`<div class="cov" style="margin-top:12px;border-color:var(--warn);background:var(--warn-2)"><div class="step" style="margin-top:0">Folga no lugar da ${WD[toD(k).getDay()].toLowerCase()}</div>
-      <p class="hint">A casa abre fora do normal e todos perdem a folga deste dia. Escolha outro dia para cada um folgar.${nPend?` <b style="color:var(--warn)">Faltam ${nPend}.</b>`:''}</p>`+
-      byArea(S.fixos.filter(vis)).flatMap(x=>x[1]).map(p=>{
-        if((D.off||[]).includes(p.id))return `<div style="margin-top:10px"><b>${esc(p.n)}</b> <span class="hint">folga neste dia, não precisa compensar</span></div>`;
-        return `<label class="fl" for="cp-${k}-${p.id}"><b style="color:var(--ink);font-size:15px">${esc(p.n)}</b> ${esc(p.r||'')}</label><select id="cp-${k}-${p.id}" data-a="comp" data-id="${p.id}" data-d="${k}"><option value="">Escolher dia da folga…</option>`+
-          opts.map(d=>{const n=offList(d).filter(x=>x.id!==p.id).length;return `<option value="${d}"${cmp[p.id]===d?' selected':''}>${WD[toD(d).getDay()]}, ${+d.slice(8)}/${d.slice(5,7)}${n?` (${n} já de folga)`:''}</option>`}).join('')+'</select>';
-      }).join('')+'</div>';
+    const cand=S.fixos.filter(vis).filter(p=>!(D.off||[]).includes(p.id)),nPend=compPend(k).length,done=cand.length-nPend;
+    h+=`<div class="step" style="margin-top:14px">Folga no lugar da ${WD[toD(k).getDay()].toLowerCase()}</div><div class="lbox">`+
+      lrow('opencov','comp',k,'Escolher os dias de folga',`${done} de ${cand.length} já escolhidos`,nPend?['warn','Faltam '+nPend]:['ok','Tudo escolhido'])+'</div>';
   }
   const cpOn=compOn(k);
   const chip=p=>{const on=off.includes(p);const fixa=isFixa(p,k);
-      const other=isSun&&!on?sundayOffs(p,k.slice(0,7)):[];
-      const sub=cpOn[p.id]?`folga no lugar de ${WS[toD(cpOn[p.id]).getDay()].toLowerCase()} ${+cpOn[p.id].slice(8)}`:other.length?`já folga dia ${+other[0].slice(8)}`:fixa?(on?'folga fixa':'trocou a folga fixa'):(p.r||'');
-      return `<button class="chip${on?' on':''}${other.length?' dis':''}" data-a="fol" data-id="${p.id}" data-d="${k}" aria-pressed="${on}"${other.length?' aria-disabled="true"':''}>${esc(p.n)}<small>${esc(sub)}</small></button>`};
+    const other=isSun&&!on?sundayOffs(p,k.slice(0,7)):[];
+    const sub=cpOn[p.id]?`no lugar de ${WS[toD(cpOn[p.id]).getDay()].toLowerCase()} ${+cpOn[p.id].slice(8)}`:other.length?`já folga dia ${+other[0].slice(8)}`:fixa?(on?'folga fixa':'trocou a fixa'):(p.r||'');
+    return `<button class="chip${on?' on':''}${other.length?' dis':''}" data-a="fol" data-id="${p.id}" data-d="${k}" aria-pressed="${on}"${other.length?' aria-disabled="true"':''}>${esc(p.n)}<small>${esc(sub)}</small></button>`};
   const grp=byArea(S.fixos.filter(vis));
-  h+=`<div class="step"><span>1</span>Quem folga neste dia?</div><p class="hint">Toque no nome para marcar ou tirar a folga.</p>`+
-    grp.map(([n,items])=>{const nOff=items.filter(p=>off.includes(p)).length;
-      return `${grp.length>1?`<div class="agrp"><b>${esc(n)}</b><small>${nOff?nOff+' de folga':'todos trabalham'}</small></div>`:''}<div class="chips">${items.map(chip).join('')}</div>`}).join('')+
-    (isSun?(()=>{const sem=S.fixos.filter(vis).filter(p=>!sundayOffs(p,k.slice(0,7)).length);return `<p class="hint" style="margin-top:8px">Domingo: cada um folga 1 por mês. ${sem.length?'Ainda sem domingo em '+monthName(k.slice(0,7)).split(' ')[0].toLowerCase()+': '+listNames(sem.map(p=>esc(p.n)))+'.':'Todos já têm o domingo do mês.'}</p>`})():'');
-  if(off.length){
-    h+=`<div class="step"><span>2</span>Quem cobre cada folga?</div>`;
-    h+=byArea(off).flatMap(x=>x[1]).map(p=>{
-      const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v;
-      let st;
-      if(vend)st='<span class="st ok">Vendeu a folga</span>';
-      else if(ex&&c.s==='confirmado')st=`<span class="st ok">Coberto por ${esc(ex.n)}</span>`;
-      else if(ex&&c.s==='chamado')st=`<span class="st warn">Esperando ${esc(ex.n)}</span>`;
-      else if(ex&&c.s==='recusou')st='<span class="st bad">Precisa de outro extra</span>';
-      else st='<span class="st bad">Sem cobertura</span>';
-      let x=`<div class="cov"><div class="cov-h"><div><b>${esc(p.n)}</b><span class="role">${esc([areaName(p.a),p.r].filter(Boolean).join(' · '))}</span></div>${st}</div>
-        <div class="seg" role="group"><button class="${!vend?'on':''}" data-a="mode" data-v="extra" data-key="${p.id}" data-d="${k}">Chamar extra</button><button class="${vend?'on':''}" data-a="mode" data-v="vend" data-key="${p.id}" data-d="${k}">Vendeu a folga</button></div>`;
-      if(vend)return x+`<p class="note ok">${esc(p.n)} vem trabalhar normalmente.</p></div>`;
-      if(!S.extras.length)return x+`<p class="note">Nenhum extra cadastrado ainda.</p><div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div></div>`;
-      x+=extraSelect(k,p.id,c.e,used,p.r,c.rec,`Extra para o lugar de ${esc(p.n)}`,p.a);
-      if(ex){x+=statusSeg(k,p.id,c,ex);if(c.s!=='recusou')x+=waBtn(ex,k,`, no lugar de ${p.n}${p.r?' ('+p.r+')':''}`,c.s)}
-      return x+'</div>';
-    }).join('');
+  const mini=folMin;
+  h+=`<button class="sec-h" data-a="folmin" aria-expanded="${!mini}"><span class="step" style="margin:0"><span>1</span>Quem folga</span><span class="sec-s">${off.length?off.length+' de folga':'ninguém de folga'} · ${mini?'Mostrar':'Minimizar'} <span aria-hidden="true">${mini?'▾':'▴'}</span></span></button>`;
+  if(mini){
+    h+=off.length?`<p class="hint" style="margin:4px 0 0">${listNames(off.map(p=>esc(p.n)))}</p>`:'';
+  }else{
+    h+=`<p class="hint" style="margin:4px 0 0">Toque no nome para marcar ou tirar a folga.</p>`+
+      grp.map(([n,items])=>{const nOff=items.filter(p=>off.includes(p)).length;
+        return `${grp.length>1?`<div class="agrp"><b>${esc(n)}</b><small>${nOff?nOff+' de folga':'todos trabalham'}</small></div>`:''}<div class="chips">${items.map(chip).join('')}</div>`}).join('')+
+      (isSun?(()=>{const sem=S.fixos.filter(vis).filter(p=>!sundayOffs(p,k.slice(0,7)).length);return `<p class="hint" style="margin-top:8px">Domingo: 1 por mês. ${sem.length?'Ainda sem domingo: '+listNames(sem.map(p=>esc(p.n)))+'.':'Todos já têm o domingo do mês.'}</p>`})():'');
   }
-  h+=`<div class="step"><span>${off.length?3:2}</span>Extras de reforço</div><p class="hint">Para dias de movimento maior, mesmo sem ninguém de folga.</p>`;
-  h+=ref.map(r=>{
-    const ex=r.e&&extraById(r.e);
-    const st=!ex?'<span class="st bad">Escolha o extra</span>':r.s==='confirmado'?'<span class="st ok">Confirmado</span>':r.s==='recusou'?'<span class="st bad">Recusou</span>':'<span class="st warn">Esperando resposta</span>';
-    let x=`<div class="cov refbox"><div class="cov-h"><div><b>${ex?esc(ex.n):'Reforço'}</b>${ex&&ex.r?`<span class="role">${esc(ex.r)}</span>`:''}</div>${st}</div>`;
-    x+=extraSelect(k,'r:'+r.id,r.e,used,'',r.rec,'Qual extra?');
-    if(ex){x+=statusSeg(k,'r:'+r.id,r,ex);if(r.s!=='recusou')x+=waBtn(ex,k,', para reforçar a equipe',r.s)}
-    return x+`<div class="row"><button class="btn danger" data-a="rmref" data-key="r:${r.id}" data-d="${k}">Tirar este reforço</button></div></div>`;
-  }).join('');
+  if(off.length){
+    h+=`<div class="step"><span>2</span>Quem cobre</div><p class="hint">Toque no nome para escolher quem cobre.</p><div class="lbox">`+
+      byArea(off).flatMap(x=>x[1]).map(p=>lrow('opencov',p.id,k,esc(p.n),esc([areaName(p.a),p.r].filter(Boolean).join(' · ')),covState(p,D))).join('')+'</div>';
+  }
+  h+=`<div class="step"><span>${off.length?3:2}</span>Reforço</div>`;
+  if(ref.length)h+='<div class="lbox">'+ref.map(r=>{const ex=r.e&&extraById(r.e);return lrow('opencov','r:'+r.id,k,ex?esc(ex.n):'Novo reforço',ex?esc([areaName(r.a||ex.a),ex.r].filter(Boolean).join(' · ')):'',refState(r))}).join('')+'</div>';
+  else h+=`<p class="hint">Para dias de mais movimento, mesmo sem ninguém de folga.</p>`;
   h+=S.extras.length?`<button class="btn addref" data-a="addref" data-d="${k}">+ Chamar extra de reforço</button>`:`<div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div>`;
   const w=S.fixos.filter(vis).filter(p=>!off.includes(p));
   if(w.length)h+=`<p class="work">Trabalham: ${listNames(w.map(p=>esc(p.n)))}.</p>`;
-  h+=`<div class="row" style="margin-top:16px;border-top:1px dashed var(--line);padding-top:10px">${isExc(k)?`<button class="btn ghost" data-a="exc" data-d="${k}" data-v="reset">Desfazer abertura especial</button>`:`<button class="btn ghost" data-a="exc" data-d="${k}" data-v="close">Fechar neste dia (feriado)</button>`}</div>`;
+  {const pe=payEntries(k),t=pe.reduce((a,x)=>a+x.v,0);h+=`<div class="lbox" style="margin-top:14px">${lrow('opencov','pay',k,'Lista de extras e pagamento',pe.length?`${pe.length} ${pe.length===1?'extra':'extras'} hoje · ${brl(t)}`:'Diárias do dia e total da semana',['ok',''])}</div>`}
+  const autoFer=isExc(k)&&isOpen(k)&&!S.cfg.open.includes(toD(k).getDay());
+  h+=`<div class="row" style="margin-top:16px;border-top:1px dashed var(--line);padding-top:10px">${autoFer?'<span class="hint" style="margin:0">Feriado: diária de domingo</span>':`<button class="btn ghost" data-a="fer" data-d="${k}" aria-pressed="${!!S.cfg.fer[k]}">${S.cfg.fer[k]?'✓ É feriado (diária de domingo)':'Marcar como feriado'}</button>`}</div>`;
+  h+=`<div class="row" style="margin-top:6px">${isExc(k)?`<button class="btn ghost" data-a="exc" data-d="${k}" data-v="reset">Desfazer abertura especial</button>`:`<button class="btn ghost" data-a="exc" data-d="${k}" data-v="close">Fechar neste dia (feriado)</button>`}</div>`;
   return h;
+}
+const brl=n=>(+n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const isFer=k=>!!S.cfg.fer[k]||(isExc(k)&&isOpen(k)&&!S.cfg.open.includes(toD(k).getDay()));
+function rate(aid,k){const ar=areaById(aid);if(!ar)return 0;const vd=ar.vd||{};const w=isFer(k)?0:toD(k).getDay();const v=vd[w];return typeof v==='number'?v:(ar.v||0)}
+function payEntries(k){
+  if(!isOpen(k))return[];const {D,off}=(()=>{const D=day(k);return{D,off:offList(k)}})(),L=[];
+  off.forEach(p=>{const c=(D.cob||{})[p.id];if(c&&c.e&&c.s==='confirmado'){const e=extraById(c.e);if(e)L.push({k,e,a:p.a,f:p.r||e.r||'',por:p.n})}});
+  (D.ref||[]).forEach(r=>{if(r.e&&r.s==='confirmado'){const e=extraById(r.e);if(e)L.push({k,e,a:r.a||e.a,f:e.r||'',por:''})}});
+  L.forEach(x=>{x.v=rate(x.a,x.k);x.fer=isFer(x.k)});
+  return L.filter(x=>!areaF||x.a===areaF);
+}
+function payView(k){
+  const dd=d=>`${WS[toD(d).getDay()].toLowerCase()} ${+d.slice(8)}/${d.slice(5,7)}`;
+  const pixBtn=e=>e.pix?`<button class="btn" style="min-height:34px;padding:4px 10px;font-size:13px" data-a="copypix" data-id="${e.id}">Copiar Pix</button>`:'<span class="st warn" style="font-size:12px">sem Pix</span>';
+  const day1=payEntries(k),tot1=day1.reduce((a,x)=>a+x.v,0);
+  let b=`<div class="step" style="margin-top:12px">Neste dia</div>`;
+  b+=day1.length?`<div class="lbox">`+day1.map(x=>`<div class="prow"><div class="lr-t"><b>${esc(x.e.n)}</b><small>${esc([areaName(x.a),x.f].filter(Boolean).join(' · '))}${x.por?' · no lugar de '+esc(x.por):' · reforço'}</small><small>Pix: ${esc(x.e.pix||'não cadastrado')}</small></div><div class="pv"><b>${brl(x.v)}</b>${pixBtn(x.e)}</div></div>`).join('')+
+    `<div class="ptot"><span>Total do dia</span><b>${brl(tot1)}</b></div></div>`:`<p class="hint">Nenhum extra confirmado neste dia.</p>`;
+  const w=monday(k),days=[...Array(7)].map((_,i)=>addDays(w,i)),all=days.flatMap(payEntries),by={};
+  all.forEach(x=>{(by[x.e.id]=by[x.e.id]||{e:x.e,it:[]}).it.push(x)});
+  const people=Object.values(by).sort((a,b)=>a.e.n.localeCompare(b.e.n,'pt-BR')),totW=all.reduce((a,x)=>a+x.v,0);
+  b+=`<div class="step">Na semana <small style="font:500 14px var(--body);color:var(--mut)">${weekLabel(w)}</small></div>`;
+  b+=people.length?`<div class="lbox">`+people.map(g=>{const t=g.it.reduce((a,x)=>a+x.v,0);
+    return `<div class="prow"><div class="lr-t"><b>${esc(g.e.n)}</b>${g.it.map(x=>`<small>${dd(x.k)}${x.fer?' (feriado)':''} · ${esc([areaName(x.a),x.f].filter(Boolean).join(' · '))} · ${brl(x.v)}</small>`).join('')}<small>Pix: ${esc(g.e.pix||'não cadastrado')}</small></div><div class="pv"><small>${g.it.length} ${g.it.length===1?'diária':'diárias'}</small><b>${brl(t)}</b>${pixBtn(g.e)}</div></div>`}).join('')+
+    `<div class="ptot"><span>Total da semana</span><b>${brl(totW)}</b></div></div>`:`<p class="hint">Nenhum extra confirmado nesta semana.</p>`;
+  const txt=`*Pagamento de extras – ${weekLabel(w)}*${areaF?' ('+areaName(areaF)+')':''}\n\n`+(people.map(g=>`${g.e.n}: ${g.it.map(x=>+x.k.slice(8)+'/'+x.k.slice(5,7)).join(', ')} = ${brl(g.it.reduce((a,x)=>a+x.v,0))}\nPix: ${g.e.pix||'não cadastrado'}`).join('\n\n')||'Nenhum extra.')+`\n\n*Total: ${brl(totW)}*`;
+  if(people.length)b+=`<div class="row"><button class="btn" data-a="copytxt" data-v="${encodeURIComponent(txt)}">Copiar resumo da semana</button></div>`;
+  b+=`<p class="hint" style="margin-top:10px">Só entram extras que confirmaram. O valor da diária depende da área e do dia da semana (feriado usa o valor de domingo). Dá para alterar em Equipe › Áreas e funções.</p>`;
+  return {t:'Lista de extras',s:longDay(k)+(isFer(k)?' · feriado':''),b};
+}
+function covEditor(k,key){
+  if(key==='pay')return payView(k);
+  const D=day(k),used=usedSet(k);
+  if(key==='comp'){
+    const cmp=D.comp||{},opts=[];for(let i=1;i<=13;i++){const d=addDays(k,i);if(isOpen(d)&&toD(d).getDay()!==0)opts.push(d)}
+    return {t:'Folga no lugar da '+WD[toD(k).getDay()].toLowerCase(),s:'Escolha outro dia para cada um folgar',b:
+      byArea(S.fixos.filter(vis)).map(([n,items])=>`<div class="agrp"><b>${esc(n)}</b></div>`+items.map(p=>{
+        if((D.off||[]).includes(p.id))return `<p class="hint" style="margin:6px 0"><b style="color:var(--ink)">${esc(p.n)}</b>: folga neste dia, não precisa compensar</p>`;
+        return `<label class="fl" for="cp-${k}-${p.id}" style="margin-top:8px"><b style="color:var(--ink);font-size:15px">${esc(p.n)}</b> ${esc(p.r||'')}</label><select id="cp-${k}-${p.id}" data-a="comp" data-id="${p.id}" data-d="${k}"><option value="">Escolher dia…</option>`+
+          opts.map(d=>{const n=offList(d).filter(x=>x.id!==p.id).length;return `<option value="${d}"${cmp[p.id]===d?' selected':''}>${WD[toD(d).getDay()]}, ${+d.slice(8)}/${d.slice(5,7)}${n?` (${n} de folga)`:''}</option>`}).join('')+'</select>'}).join('')).join('')};
+  }
+  if(key.startsWith('r:')){
+    const r=(D.ref||[]).find(x=>x.id===key.slice(2));if(!r)return null;const ex=r.e&&extraById(r.e),st=refState(r);
+    let b=`<p class="st ${st[0]}" style="margin:12px 0 0">${esc(st[1])}</p>`+extraSelect(k,key,r.e,used,'',r.rec,'Qual extra?');
+    if(ex){const ra=r.a||ex.a||'';b+=`<label class="fl">Vai trabalhar em qual área?</label><div class="seg" role="group">`+[...S.cfg.areas].sort((x,y)=>x.n.localeCompare(y.n,'pt-BR')).map(a=>`<button class="${ra===a.id?'on':''}" data-a="refarea" data-v="${a.id}" data-key="${key}" data-d="${k}">${esc(a.n)}<small style="display:block;font-size:11px;opacity:.8">${brl(rate(a.id,k))}</small></button>`).join('')+'</div>'}
+    if(ex){b+=statusSeg(k,key,r,ex);if(r.s!=='recusou')b+=waBtn(ex,k,', para reforçar a equipe',r.s)}
+    b+=`<div class="row" style="margin-top:16px"><button class="btn danger" data-a="rmref" data-key="${key}" data-d="${k}">Tirar este reforço</button></div>`;
+    return {t:'Extra de reforço',s:longDay(k),b};
+  }
+  const p=S.fixos.find(x=>x.id===key);if(!p)return null;
+  const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v,st=covState(p,D);
+  let b=`<p class="st ${st[0]}" style="margin:12px 0 0">${esc(st[1])}</p>
+    <div class="seg" role="group"><button class="${!vend?'on':''}" data-a="mode" data-v="extra" data-key="${p.id}" data-d="${k}">Chamar extra</button><button class="${vend?'on':''}" data-a="mode" data-v="vend" data-key="${p.id}" data-d="${k}">Vendeu a folga</button></div>`;
+  if(vend)b+=`<p class="note ok">${esc(p.n)} vem trabalhar normalmente.</p>`;
+  else if(!S.extras.length)b+=`<p class="note">Nenhum extra cadastrado ainda.</p><div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div>`;
+  else{b+=extraSelect(k,p.id,c.e,used,p.r,c.rec,`Extra para o lugar de ${esc(p.n)}`,p.a);
+    if(ex){b+=statusSeg(k,p.id,c,ex);if(c.s!=='recusou')b+=waBtn(ex,k,`, no lugar de ${p.n}${p.r?' ('+p.r+')':''}`,c.s)}}
+  return {t:'Cobrir '+p.n,s:[areaName(p.a),p.r].filter(Boolean).join(' · ')+' · '+longDay(k),b};
+}
+function renderCov(){
+  const el=$('covm');
+  const ed=cov&&sheet&&tab==='cal'?covEditor(cov.k,cov.key):null;
+  if(!ed){cov=null;el.hidden=true;el.innerHTML='';return}
+  const prev=el.querySelector('.cm-b'),stp=prev?prev.scrollTop:0,same=el.dataset.key===cov.k+cov.key;
+  el.innerHTML=`<div class="sh-bg" data-a="covclose"></div><div class="cm" role="dialog" aria-modal="true" aria-labelledby="cmT">
+    <div class="cm-h"><div style="flex:1;min-width:0"><b id="cmT">${esc(ed.t)}</b><small>${esc(ed.s)}</small></div><button class="ib" data-a="covclose" aria-label="Fechar">✕</button></div>
+    <div class="cm-b">${ed.b}</div>
+    <div class="cm-f"><button class="btn pri" data-a="covclose" style="width:100%;justify-content:center">Pronto</button></div></div>`;
+  el.hidden=false;el.dataset.key=cov.k+cov.key;
+  if(same)el.querySelector('.cm-b').scrollTop=stp;
 }
 
 /* ---------- mês ---------- */
 function monthDays(m){const [y,mm]=m.split('-').map(Number),r=[],x=new Date(y,mm-1,1);while(x.getMonth()===mm-1){r.push(iso(x));x.setDate(x.getDate()+1)}return r}
 function vMonth(){
   const t=iso(today()),days=monthDays(mo),lead=(toD(days[0]).getDay()+6)%7;
-  let h=`<div class="mnav"><button class="ib" data-a="mprev" aria-label="Mês anterior">‹</button><h2>${monthName(mo)}</h2><button class="ib" data-a="mnext" aria-label="Próximo mês">›</button></div>`+areaBar();
+  let h='';
+  if(!S.fixos.length)return `<div class="empty"><p>Para começar, cadastre a equipe.</p><button class="btn pri" data-a="tab" data-id="team">Cadastrar equipe</button></div>`;
+  const pd=days.filter(k=>isOpen(k)&&k>=t&&status(k).pend).length;
+  h+=`<p class="lead" style="margin-top:0">${pd?`<b style="color:var(--warn)">${pd} ${pd===1?'dia precisa':'dias precisam'} de atenção</b>`:'Toque numa data para marcar folgas e extras'}</p>`;
   h+=`<div class="cal"><div class="cal-g">`+ORDER.map(i=>`<div class="cal-w">${WS[i]}</div>`).join('');
   for(let i=0;i<lead;i++)h+='<div class="cal-d x"></div>';
   days.forEach(k=>{
-    if(!isOpen(k)){h+=`<button class="cal-d closed" data-a="goday" data-id="${k}" aria-label="${dm(k)}: fechado"><span class="cn">${+k.slice(8)}</span></button>`;return}
+    if(!isOpen(k)){h+=`<button class="cal-d closed${sheet===k?' sel':''}" data-a="goday" data-id="${k}" aria-label="${dm(k)}: casa fechada"><span class="cn">${+k.slice(8)}</span><span class="fech">Fechado</span></button>`;return}
     const {off,pend,extras}=status(k);
     const dots=off.slice(0,4).map(()=>'<i class="dot"></i>').join('')+extras.slice(0,4).map(()=>'<i class="dot g"></i>').join('');
     const lbl=`${WD[toD(k).getDay()]}, ${dm(k)}: ${off.length} de folga, ${extras.length} extras${pend?', '+pend+' pendente':''}`;
-    h+=`<button class="cal-d${k===t?' today':''}${isExc(k)?' special':''}${pend&&k>=t?' pend':''}" data-a="goday" data-id="${k}" aria-label="${lbl}"><span class="cn">${+k.slice(8)}</span><span class="dots">${dots}</span></button>`;
+    h+=`<button class="cal-d${sheet===k?' sel':''}${k===t?' today':''}${isExc(k)?' special':''}${pend&&k>=t?' pend':''}" data-a="goday" data-id="${k}" aria-label="${lbl}"><span class="cn">${+k.slice(8)}</span><span class="dots">${dots}</span></button>`;
   });
   h+=`</div><div class="legend"><span><i class="dot"></i> folga</span><span><i class="dot g"></i> extra confirmado</span><span><i style="width:12px;height:12px;border-radius:3px;box-shadow:inset 0 0 0 2px var(--warn);display:inline-block"></i> falta resolver</span><span><i style="width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--warn);display:inline-block"></i> abertura especial</span></div></div>`;
   // tally
@@ -570,7 +703,7 @@ function vTeam(){
   if(!isX){
     h+=S.fixos.length?grouped(S.fixos,'fixo'):'<div class="empty">Ninguém cadastrado ainda.</div>';
     h+=`<div class="sec"><h2>Dias em que a casa abre</h2></div><div class="card"><p class="hint">Dias desmarcados aparecem como fechados.</p><div class="fwchips">`+ORDER.map(i=>{const on=S.cfg.open.includes(i);return `<button class="chip${on?' on':''}" data-a="openday" data-v="${i}" aria-pressed="${on}">${WS[i]}</button>`}).join('')+`</div></div>`;
-    h+=`<div class="sec"><h2>Áreas e funções</h2></div>`+S.cfg.areas.map(a=>`<div class="card"><h3>${esc(a.n)}</h3><div class="fwchips" style="margin-top:8px">`+
+    h+=`<div class="sec"><h2>Áreas e funções</h2></div>`+S.cfg.areas.map(a=>`<div class="card"><h3>${esc(a.n)}</h3><p class="hint" style="margin:6px 0 4px">Diária do extra por dia (R$). Feriado usa o valor de domingo.</p><div class="vgrid">${ORDER.filter(i=>i!==1||S.cfg.open.includes(1)).map(i=>`<label><span>${WS[i]}</span><input data-a="areaval" data-id="${a.id}" data-v="${i}" type="number" inputmode="decimal" min="0" step="5" value="${(a.vd||{})[i]??a.v??0}"></label>`).join('')}</div><div class="fwchips" style="margin-top:8px">`+
       a.f.map((f,i)=>`<span class="chip" style="display:inline-flex;align-items:center;gap:6px;min-height:38px">${esc(f)}<button class="btn danger" style="min-height:28px;padding:0 4px" data-a="rmfunc" data-id="${a.id}" data-v="${i}" aria-label="Remover ${esc(f)}">×</button></span>`).join('')+
       `</div><div class="row"><input id="nf-${a.id}" placeholder="Nova função" style="flex:1;min-width:0"><button class="btn" data-a="addfunc" data-id="${a.id}">Adicionar</button></div></div>`).join('')+
       `<div class="card"><div class="row" style="margin-top:0"><input id="narea" placeholder="Nova área (ex.: Limpeza)" style="flex:1;min-width:0"><button class="btn" data-a="addarea">Criar área</button></div></div>`;
@@ -581,9 +714,44 @@ function vTeam(){
   return h;
 }
 
+function renderSheet(){
+  const el=$('sheet');
+  if(!sheet||tab!=='cal'){el.hidden=true;el.innerHTML='';document.body.style.overflow='';return}
+  const prev=el.querySelector('.sh-b'),st=prev?prev.scrollTop:0,same=el.dataset.k===sheet;
+  const k=sheet,wd=toD(k).getDay(),t=iso(today());
+  let pill='';if(isOpen(k)){const {off,ref,pend}=status(k);pill=pend?`<span class="pill warn">Falta ${pend}</span>`:(off.length||ref.length)?'<span class="pill ok">Tudo certo</span>':'<span class="pill none">Normal</span>'}
+  let body;
+  if(!isOpen(k))body=`<p class="note" style="margin-top:14px">${isExc(k)?'A casa foi fechada neste dia (feriado).':'Casa fechada. Normalmente não abre neste dia da semana.'}</p>
+    <div class="row"><button class="btn pri" data-a="exc" data-d="${k}" data-v="${isExc(k)?'reset':'open'}">${isExc(k)?'Reabrir este dia':'Abrir neste dia (feriado)'}</button></div>
+    ${isExc(k)?'':`<p class="hint" style="margin-top:10px">Ao abrir, o app pede para escolher outro dia de folga para cada funcionário.</p>`}`;
+  else{
+    const w=monday(k),txt=(()=>{const o=wk;wk=w;const r=weekText();wk=o;return r})();
+    body=dayBody(k)+`<div class="row" style="margin-top:12px"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">Enviar escala da semana</a></div>`;
+  }
+  el.innerHTML=`<div class="sh-bg" data-a="shclose"></div><div class="sh" role="dialog" aria-modal="true" aria-labelledby="shT">
+    <div class="sh-h"><button class="ib" data-a="shprev" aria-label="Dia anterior">‹</button>
+      <div class="sh-t"><span class="dname" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${WS[wd]}${k===t?' · hoje':''} ${pill}${isExc(k)&&isOpen(k)?'<span class="pill warn">Abertura especial</span>':''}</span><b id="shT">${dm(k)}</b></div>
+      <button class="ib" data-a="shnext" aria-label="Próximo dia">›</button><button class="ib" data-a="shclose" aria-label="Fechar">✕</button></div>
+    <div class="sh-b">${body}</div></div>`;
+  el.hidden=false;el.dataset.k=k;document.body.style.overflow='hidden';
+  if(same)el.querySelector('.sh-b').scrollTop=st;
+}
+function hsub(){
+  if(!S.fixos.length&&tab!=='team')return '';
+  if(tab==='cal'){const cur=iso(today()).slice(0,7);return `<div class="hsub-in"><div class="mnav"><button class="ib" data-a="mprev" aria-label="Mês anterior">‹</button><h2>${monthName(mo)}${mo!==cur?` <button class="btn ghost" data-a="mtoday" style="min-height:30px;padding:2px 8px;font:600 13px var(--body);vertical-align:3px">Hoje</button>`:''}</h2><button class="ib" data-a="mnext" aria-label="Próximo mês">›</button></div>${areaBar()}</div>`}
+  if(tab==='week')return `<div class="hsub-in"><div class="mnav"><button class="ib" data-a="wprev" aria-label="Semana anterior">‹</button><h2>${weekLabel(wk)}</h2><button class="ib" data-a="wnext" aria-label="Próxima semana">›</button></div>${areaBar()}</div>`;
+  if(tab==='month')return `<div class="hsub-in"><div class="mnav"><button class="ib" data-a="mprev" aria-label="Mês anterior">‹</button><h2>${monthName(mo)}</h2><button class="ib" data-a="mnext" aria-label="Próximo mês">›</button></div>${areaBar()}</div>`;
+  return '';
+}
+function setHH(){document.documentElement.style.setProperty('--hh',$('hdr').offsetHeight+'px')}
+window.addEventListener('resize',setHH);
 function render(){
+  $('hsub').innerHTML=hsub();
   persistUI();renderTabs();
-  $('app').innerHTML=tab==='week'?vWeek():tab==='month'?vMonth():vTeam();
+  $('app').innerHTML=tab==='cal'?vMonth():vTeam();
+  renderSheet();renderCov();
+  setHH();
+  const bar=$('hsub').querySelector('.fwchips'),on=bar&&bar.querySelector('.chip.on');if(on)bar.scrollLeft=on.offsetLeft-(bar.clientWidth-on.offsetWidth)/2;
 }
 
 /* ---------- events ---------- */
@@ -591,12 +759,21 @@ function covObj(D,key){if(key.startsWith('r:'))return D.ref.find(r=>r.id===key.s
 document.addEventListener('click',ev=>{
   const b=ev.target.closest('[data-a]');if(!b||b.tagName==='SELECT')return;
   const a=b.dataset.a,id=b.dataset.id,k=b.dataset.d,v=b.dataset.v,key=b.dataset.key;
-  if(a==='tab'){tab=id;editing=null;adding=false;render();window.scrollTo(0,0)}
-  else if(a==='wprev'||a==='wnext'){wk=addDays(wk,a==='wnext'?7:-7);open='';render()}
+  if(a==='tab'){tab=id;sheet='';editing=null;adding=false;render();window.scrollTo(0,0)}
+  else if(a==='wprev'||a==='wnext'){wk=addDays(wk,a==='wnext'?7:-7);open='';render();window.scrollTo(0,0)}
   else if(a==='thisweek'){wk=monday(iso(today()));open=iso(today());render()}
   else if(a==='mprev'||a==='mnext'){const [y,mm]=mo.split('-').map(Number);mo=iso(new Date(y,mm-1+(a==='mnext'?1:-1),1)).slice(0,7);imgUrl='';imgBlob=null;render()}
   else if(a==='open'){open=open===id?'':id;render();if(open){const el=$('d-'+id);el&&el.scrollIntoView({block:'nearest',behavior:'smooth'})}}
-  else if(a==='goday'){tab='week';wk=monday(id);open=id;render();setTimeout(()=>{const el=$('d-'+id);el&&el.scrollIntoView({block:'start',behavior:'smooth'})},30)}
+  else if(a==='goday'){sheet=id;renderSheet();$('app').querySelectorAll('.cal-d.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')}
+  else if(a==='shclose'){sheet='';cov=null;render()}
+  else if(a==='opencov'){cov={k,key};renderCov();setTimeout(()=>{const f=$('covm').querySelector('select,button.on,button');f&&f.focus({preventScroll:true})},30)}
+  else if(a==='covclose'){cov=null;render()}
+  else if(a==='copytxt'){const t=decodeURIComponent(v);(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Resumo copiado')).catch(()=>toast('Não foi possível copiar'))}
+  else if(a==='refarea'){const r=mday(k).ref.find(x=>x.id===key.slice(2));if(r){r.a=v;commit()}}
+  else if(a==='fer'){if(S.cfg.fer[k])delete S.cfg.fer[k];else S.cfg.fer[k]=true;commit();toast(S.cfg.fer[k]?'Marcado como feriado':'Feriado desmarcado')}
+  else if(a==='folmin'){folMin=!folMin;render()}
+  else if(a==='shprev'||a==='shnext'){cov=null;sheet=addDays(sheet,a==='shnext'?1:-1);if(sheet.slice(0,7)!==mo){mo=sheet.slice(0,7);imgUrl='';imgBlob=null}render()}
+  else if(a==='mtoday'){mo=iso(today()).slice(0,7);imgUrl='';imgBlob=null;render()}
   else if(a==='exc'){const snap=clone(S);if(v==='reset')delete S.cfg.exc[k];else S.cfg.exc[k]=v==='open';open=v==='open'||(v==='reset'&&isOpen(k))?k:open;commit();
     toast(v==='open'?'Aberto neste dia':v==='close'?'Fechado neste dia':'Voltou ao normal',snap)}
   else if(a==='fol'){const D=mday(k),p=S.fixos.find(x=>x.id===id);const isOff=offList(k).includes(p);
@@ -607,8 +784,8 @@ document.addEventListener('click',ev=>{
     commit()}
   else if(a==='mode'){const D=mday(k);if(v==='vend')D.cob[key]={v:1};else if(D.cob[key]&&D.cob[key].v)delete D.cob[key];commit()}
   else if(a==='st'){const D=mday(k),c=covObj(D,key);if(!c)return;c.s=v;if(v==='recusou')c.rec=[...new Set([...(c.rec||[]),c.e])];commit()}
-  else if(a==='addref'){mday(k).ref.push({id:uid(),e:'',s:'',rec:[]});commit()}
-  else if(a==='rmref'){const D=mday(k),snap=clone(S);D.ref=D.ref.filter(r=>r.id!==key.slice(2));commit();toast('Reforço removido',snap)}
+  else if(a==='addref'){const nid=uid();mday(k).ref.push({id:nid,e:'',s:'',rec:[]});cov={k,key:'r:'+nid};commit()}
+  else if(a==='rmref'){const D=mday(k),snap=clone(S);D.ref=D.ref.filter(r=>r.id!==key.slice(2));cov=null;commit();toast('Reforço removido',snap)}
   else if(a==='tgarea'){openAreas.has(id)?openAreas.delete(id):openAreas.add(id);render()}
   else if(a==='areaf'){areaF=v;imgUrl='';imgBlob=null;render()}
   else if(a==='addfunc'){const ar=areaById(id),inp=$('nf-'+id),f=inp.value.trim();if(!f){inp.focus();return}if(!ar.f.some(x=>same(x,f)))ar.f.push(f);commit();toast(f+' adicionada em '+ar.n)}
@@ -616,7 +793,7 @@ document.addEventListener('click',ev=>{
   else if(a==='addarea'){const n=$('narea').value.trim();if(!n){$('narea').focus();return}S.cfg.areas.push({id:uid(),n,f:[]});commit();toast('Área '+n+' criada')}
   else if(a==='sub'){teamSub=v;adding=false;editing=null;render()}
   else if(a==='copypix'){const e=extraById(id);if(e&&e.pix)(navigator.clipboard?navigator.clipboard.writeText(e.pix):Promise.reject()).then(()=>toast('Pix de '+e.n+' copiado')).catch(()=>toast('Pix: '+e.pix))}
-  else if(a==='goadd'){tab='team';adding=true;addKind=v||'fixo';teamSub=addKind==='extra'?'extras':'equipe';editing=null;render();window.scrollTo(0,0);setTimeout(()=>$('nn')&&$('nn').focus(),0)}
+  else if(a==='goadd'){tab='team';sheet='';adding=true;addKind=v||'fixo';teamSub=addKind==='extra'?'extras':'equipe';editing=null;render();window.scrollTo(0,0);setTimeout(()=>$('nn')&&$('nn').focus(),0)}
   else if(a==='kind'){const n=$('nn').value,r=$('nr').value;addKind=v;render();$('nn').value=n;$('nr').value=r}
   else if(a==='cancel'){adding=false;render()}
   else if(a==='fw'){const on=!b.classList.contains('on');b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)}
@@ -639,6 +816,8 @@ document.addEventListener('click',ev=>{
   else if(a==='copy'){const t=v==='week'?weekText():monthText();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto copiado')).catch(()=>toast('Selecione o texto e copie manualmente'))}
 });
 document.addEventListener('change',ev=>{
+  const av=ev.target.closest('input[data-a="areaval"]');
+  if(av){const ar=areaById(av.dataset.id),w=+av.dataset.v,val=Math.max(0,parseFloat(String(av.value).replace(',','.'))||0);ar.vd=ar.vd||{};ar.vd[w]=val;commit();toast(`${ar.n}, ${WD[w].toLowerCase()}: ${brl(val)}`);return}
   const as=ev.target.closest('select[data-a="areasel"]');
   if(as){const r=$(as.dataset.pre+'r');r.innerHTML=funcOpts(as.value,'');return}
   const cs=ev.target.closest('select[data-a="comp"]');
@@ -650,7 +829,7 @@ document.addEventListener('change',ev=>{
   else{const old=D.cob[key]||{};if(s.value)D.cob[key]={e:s.value,s:'chamado',rec:old.rec||[]};else delete D.cob[key]}
   commit();
 });
-document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.tagName==='INPUT'&&ev.target.closest('.addbox,.pform')){const b=ev.target.closest('.addbox,.pform').querySelector('.btn.pri');b&&b.click()}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&cov){cov=null;render();return}if(ev.key==='Escape'&&sheet){sheet='';render();return}if(ev.key==='Enter'&&ev.target.tagName==='INPUT'&&ev.target.closest('.addbox,.pform')){const b=ev.target.closest('.addbox,.pform').querySelector('.btn.pri');b&&b.click()}});
 </script>
 </body>
 </html>
