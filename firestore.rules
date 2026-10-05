@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Só estes e-mails podem ler e editar as folgas.
+    // Troque pelos e-mails reais (dono, gerente...), sempre em minúsculas.
+    function autorizado() {
+      return request.auth != null
+        && request.auth.token.email in [
+          'dono@exemplo.com',
+          'gerente@exemplo.com'
+        ];
+    }
+    match /app/estado {
+      allow read, write: if autorizado();
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
