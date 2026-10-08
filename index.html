@@ -322,6 +322,7 @@ const isExc=k=>k in S.cfg.exc;
 const day=k=>S.dias[k]||{off:[],on:[],cob:{},ref:[]};
 const mday=k=>{const D=S.dias[k]||(S.dias[k]={});D.off=D.off||[];D.on=D.on||[];D.cob=D.cob||{};D.ref=D.ref||[];return D};
 const extraById=id=>S.extras.find(e=>e.id===id);
+const pessoaById=id=>extraById(id)||S.fixos.find(p=>p.id===id);
 const isFixa=(p,k)=>{const w=toD(k).getDay();return w!==0&&!(k in S.cfg.exc)&&(p.fw||[]).includes(w)};
 function compOn(k){const r={};for(const d in S.dias){const c=S.dias[d].comp;if(c&&isOpen(d))for(const pid in c)if(c[pid]===k)r[pid]=d}return r}
 function sundayOffs(p,m){return monthDays(m).filter(k=>toD(k).getDay()===0&&isOpen(k)&&offList(k).includes(p))}
@@ -529,7 +530,8 @@ const isFer=k=>!!S.cfg.fer[k]||(isExc(k)&&isOpen(k)&&!S.cfg.open.includes(toD(k)
 function rate(aid,k){const ar=areaById(aid);if(!ar)return 0;const vd=ar.vd||{};const w=isFer(k)?0:toD(k).getDay();const v=vd[w];return typeof v==='number'?v:(ar.v||0)}
 function payEntries(k){
   if(!isOpen(k))return[];const {D,off}=(()=>{const D=day(k);return{D,off:offList(k)}})(),L=[];
-  off.forEach(p=>{const c=(D.cob||{})[p.id];if(c&&c.e&&c.s==='confirmado'){const e=extraById(c.e);if(e)L.push({k,e,a:p.a,f:p.r||e.r||'',por:p.n})}});
+  off.forEach(p=>{const c=(D.cob||{})[p.id];if(c&&c.e&&c.s==='confirmado'){const e=extraById(c.e);if(e)L.push({k,e,a:p.a,f:p.r||e.r||'',por:p.n})}
+    else if(c&&c.v&&toD(k).getDay()===0)L.push({k,e:p,a:p.a,f:p.r||'',por:'',vend:1})});
   (D.ref||[]).forEach(r=>{if(r.e&&r.s==='confirmado'){const e=extraById(r.e);if(e)L.push({k,e,a:r.a||e.a,f:e.r||'',por:''})}});
   L.forEach(x=>{x.v=rate(x.a,x.k);x.fer=isFer(x.k)});
   return L.filter(x=>!areaF||x.a===areaF);
@@ -539,18 +541,18 @@ function payView(k){
   const pixBtn=e=>e.pix?`<button class="btn" style="min-height:34px;padding:4px 10px;font-size:13px" data-a="copypix" data-id="${e.id}">Copiar Pix</button>`:'<span class="st warn" style="font-size:12px">sem Pix</span>';
   const day1=payEntries(k),tot1=day1.reduce((a,x)=>a+x.v,0);
   let b=`<div class="step" style="margin-top:12px">Neste dia</div>`;
-  b+=day1.length?`<div class="lbox">`+day1.map(x=>`<div class="prow"><div class="lr-t"><b>${esc(x.e.n)}</b><small>${esc([areaName(x.a),x.f].filter(Boolean).join(' · '))}${x.por?' · no lugar de '+esc(x.por):' · reforço'}</small><small>Pix: ${esc(x.e.pix||'não cadastrado')}</small></div><div class="pv"><b>${brl(x.v)}</b>${pixBtn(x.e)}</div></div>`).join('')+
+  b+=day1.length?`<div class="lbox">`+day1.map(x=>`<div class="prow"><div class="lr-t"><b>${esc(x.e.n)}</b><small>${esc([areaName(x.a),x.f].filter(Boolean).join(' · '))}${x.vend?' · vendeu a folga':x.por?' · no lugar de '+esc(x.por):' · reforço'}</small><small>Pix: ${esc(x.e.pix||'não cadastrado')}</small></div><div class="pv"><b>${brl(x.v)}</b>${pixBtn(x.e)}</div></div>`).join('')+
     `<div class="ptot"><span>Total do dia</span><b>${brl(tot1)}</b></div></div>`:`<p class="hint">Nenhum extra confirmado neste dia.</p>`;
   const w=monday(k),days=[...Array(7)].map((_,i)=>addDays(w,i)),all=days.flatMap(payEntries),by={};
   all.forEach(x=>{(by[x.e.id]=by[x.e.id]||{e:x.e,it:[]}).it.push(x)});
   const people=Object.values(by).sort((a,b)=>a.e.n.localeCompare(b.e.n,'pt-BR')),totW=all.reduce((a,x)=>a+x.v,0);
   b+=`<div class="step">Na semana <small style="font:500 14px var(--body);color:var(--mut)">${weekLabel(w)}</small></div>`;
   b+=people.length?`<div class="lbox">`+people.map(g=>{const t=g.it.reduce((a,x)=>a+x.v,0);
-    return `<div class="prow"><div class="lr-t"><b>${esc(g.e.n)}</b>${g.it.map(x=>`<small>${dd(x.k)}${x.fer?' (feriado)':''} · ${esc([areaName(x.a),x.f].filter(Boolean).join(' · '))} · ${brl(x.v)}</small>`).join('')}<small>Pix: ${esc(g.e.pix||'não cadastrado')}</small></div><div class="pv"><small>${g.it.length} ${g.it.length===1?'diária':'diárias'}</small><b>${brl(t)}</b>${pixBtn(g.e)}</div></div>`}).join('')+
+    return `<div class="prow"><div class="lr-t"><b>${esc(g.e.n)}</b>${g.it.map(x=>`<small>${dd(x.k)}${x.fer?' (feriado)':''} · ${esc([areaName(x.a),x.f].filter(Boolean).join(' · '))}${x.vend?' · vendeu a folga':''} · ${brl(x.v)}</small>`).join('')}<small>Pix: ${esc(g.e.pix||'não cadastrado')}</small></div><div class="pv"><small>${g.it.length} ${g.it.length===1?'diária':'diárias'}</small><b>${brl(t)}</b>${pixBtn(g.e)}</div></div>`}).join('')+
     `<div class="ptot"><span>Total da semana</span><b>${brl(totW)}</b></div></div>`:`<p class="hint">Nenhum extra confirmado nesta semana.</p>`;
   const txt=`*Pagamento de extras – ${weekLabel(w)}*${areaF?' ('+areaName(areaF)+')':''}\n\n`+(people.map(g=>`${g.e.n}: ${g.it.map(x=>+x.k.slice(8)+'/'+x.k.slice(5,7)).join(', ')} = ${brl(g.it.reduce((a,x)=>a+x.v,0))}\nPix: ${g.e.pix||'não cadastrado'}`).join('\n\n')||'Nenhum extra.')+`\n\n*Total: ${brl(totW)}*`;
   if(people.length)b+=`<div class="row"><button class="btn" data-a="copytxt" data-v="${encodeURIComponent(txt)}">Copiar resumo da semana</button></div>`;
-  b+=`<p class="hint" style="margin-top:10px">Só entram extras que confirmaram. O valor da diária depende da área e do dia da semana (feriado usa o valor de domingo). Dá para alterar em Equipe › Áreas e funções.</p>`;
+  b+=`<p class="hint" style="margin-top:10px">Só entram extras que confirmaram e funcionários que venderam a folga de domingo. O valor da diária depende da área e do dia da semana (feriado usa o valor de domingo). Dá para alterar em Equipe › Áreas e funções.</p>`;
   return {t:'Lista de extras',s:longDay(k)+(isFer(k)?' · feriado':''),b};
 }
 function covEditor(k,key){
@@ -573,10 +575,10 @@ function covEditor(k,key){
     return {t:'Extra de reforço',s:longDay(k),b};
   }
   const p=S.fixos.find(x=>x.id===key);if(!p)return null;
-  const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v,nao=!!c.n,st=covState(p,D);
+  const c=(D.cob||{})[p.id]||{},ex=c.e&&extraById(c.e),vend=!!c.v,nao=!!c.n,st=covState(p,D),isSun=toD(k).getDay()===0;
   let b=`<p class="st ${st[0]}" style="margin:12px 0 0">${esc(st[1])}</p>
     <div class="seg" role="group"><button class="${!vend&&!nao?'on':''}" data-a="mode" data-v="extra" data-key="${p.id}" data-d="${k}">Chamar extra</button><button class="${vend?'on':''}" data-a="mode" data-v="vend" data-key="${p.id}" data-d="${k}">Vendeu a folga</button><button class="${nao?'on':''}" data-a="mode" data-v="nao" data-key="${p.id}" data-d="${k}">Não precisa</button></div>`;
-  if(vend)b+=`<p class="note ok">${esc(p.n)} vem trabalhar normalmente.</p>`;
+  if(vend)b+=`<p class="note ok">${esc(p.n)} vem trabalhar normalmente.${isSun?' Entra na lista de extras do dia com a diária de '+brl(rate(p.a,k))+'.':''}</p>`+(isSun&&p.pix?`<div class="row"><button class="btn" data-a="copypix" data-id="${p.id}">Copiar Pix de ${esc(p.n)}</button></div>`:'');
   else if(nao)b+=`<p class="note ok">A folga de ${esc(p.n)} não precisa de reposição neste dia.</p>`;
   else if(!S.extras.length)b+=`<p class="note">Nenhum extra cadastrado ainda.</p><div class="row"><button class="btn" data-a="goadd" data-v="extra">Cadastrar extra</button></div>`;
   else{b+=extraSelect(k,p.id,c.e,used,p.r,c.rec,`Extra para o lugar de ${esc(p.n)}`,p.a);
@@ -693,7 +695,7 @@ function vTeam(){
     h+=`<div class="addbox"><div class="step" style="margin-top:0">${isX?'Novo extra':'Novo funcionário'}</div>
       <label class="fl" for="nn">Nome</label><input id="nn" autocomplete="off">
       ${areaFields('n',{a:areaF||(S.cfg.areas[0]||{}).id||'',r:''})}
-      ${isX?'<label class="fl" for="nt">WhatsApp com DDD</label><input id="nt" type="tel" inputmode="tel" placeholder="53 98415-3816"><label class="fl" for="np">Chave Pix</label><input id="np" autocomplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória">':`<label class="fl">Folga fixa toda semana (se tiver)</label>${fwChips([])}`}
+      ${isX?'<label class="fl" for="nt">WhatsApp com DDD</label><input id="nt" type="tel" inputmode="tel" placeholder="53 98415-3816"><label class="fl" for="np">Chave Pix</label><input id="np" autocomplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória">':`<label class="fl" for="np">Chave Pix</label><input id="np" autocomplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória"><label class="fl">Folga fixa toda semana (se tiver)</label>${fwChips([])}`}
       <div class="row"><button class="btn pri" data-a="add">Adicionar</button><button class="btn ghost" data-a="cancel">Cancelar</button></div></div>`;
   }else h+=`<div class="row" style="margin-top:0;margin-bottom:12px"><button class="btn pri" data-a="goadd" data-v="${isX?'extra':'fixo'}">${isX?'+ Adicionar extra':'+ Adicionar funcionário'}</button></div>`;
   const grouped=(L,kind)=>{
@@ -710,10 +712,10 @@ function vTeam(){
     }).join('');
   };
   const row=(p,kind)=>{
-    const meta=kind==='fixo'?`${esc(p.r||'Sem função')}${(p.fw||[]).filter(i=>i).length?', folga fixa: '+ORDER.filter(i=>i&&p.fw.includes(i)).map(i=>WS[i].toLowerCase()).join(', '):''}`:`${esc(p.r||'Sem função')}${p.t?', '+esc(p.t):''}${p.pix?'<br>Pix: '+esc(p.pix):'<br><span style="color:var(--warn)">Sem chave Pix</span>'}`;
+    const meta=kind==='fixo'?`${esc(p.r||'Sem função')}${(p.fw||[]).filter(i=>i).length?', folga fixa: '+ORDER.filter(i=>i&&p.fw.includes(i)).map(i=>WS[i].toLowerCase()).join(', '):''}${p.pix?'<br>Pix: '+esc(p.pix):''}`:`${esc(p.r||'Sem função')}${p.t?', '+esc(p.t):''}${p.pix?'<br>Pix: '+esc(p.pix):'<br><span style="color:var(--warn)">Sem chave Pix</span>'}`;
     let x=`<div class="person"><button data-a="edit" data-id="${p.id}" aria-expanded="${editing===p.id}"><span><b>${esc(p.n)}</b><span class="pm">${meta}</span></span><span class="edit">${editing===p.id?'Fechar':'Editar'}</span></button>`;
-    if(kind==='extra'&&p.pix&&editing!==p.id)x+=`<div style="padding:0 14px 12px"><button class="btn" data-a="copypix" data-id="${p.id}">Copiar Pix</button></div>`;
-    if(editing===p.id)x+=`<div class="pform"><label class="fl" for="en">Nome</label><input id="en" value="${esc(p.n)}">${areaFields('e',p)}${kind==='extra'?`<label class="fl" for="et">WhatsApp com DDD</label><input id="et" type="tel" inputmode="tel" value="${esc(p.t||'')}"><label class="fl" for="ep">Chave Pix</label><input id="ep" autocomplete="off" value="${esc(p.pix||'')}" placeholder="CPF, telefone, e-mail ou chave aleatória">`:`<label class="fl">Folga fixa toda semana</label>${fwChips(p.fw||[])}<p class="hint" style="margin-top:6px">Aparece automaticamente em todas as semanas. Dá para trocar dia a dia. A folga de domingo é marcada no próprio dia (1 por mês).</p>`}
+    if(p.pix&&editing!==p.id)x+=`<div style="padding:0 14px 12px"><button class="btn" data-a="copypix" data-id="${p.id}">Copiar Pix</button></div>`;
+    if(editing===p.id)x+=`<div class="pform"><label class="fl" for="en">Nome</label><input id="en" value="${esc(p.n)}">${areaFields('e',p)}${kind==='extra'?`<label class="fl" for="et">WhatsApp com DDD</label><input id="et" type="tel" inputmode="tel" value="${esc(p.t||'')}"><label class="fl" for="ep">Chave Pix</label><input id="ep" autocomplete="off" value="${esc(p.pix||'')}" placeholder="CPF, telefone, e-mail ou chave aleatória">`:`<label class="fl" for="ep">Chave Pix</label><input id="ep" autocomplete="off" value="${esc(p.pix||'')}" placeholder="CPF, telefone, e-mail ou chave aleatória"><label class="fl">Folga fixa toda semana</label>${fwChips(p.fw||[])}<p class="hint" style="margin-top:6px">Aparece automaticamente em todas as semanas. Dá para trocar dia a dia. A folga de domingo é marcada no próprio dia (1 por mês).</p>`}
       <div class="row"><button class="btn pri" data-a="savep" data-id="${p.id}" data-v="${kind}">Salvar</button><button class="btn danger" data-a="rm" data-id="${p.id}" data-v="${kind}">Remover ${esc(p.n)}</button></div></div>`;
     return x+'</div>';
   };
@@ -810,7 +812,7 @@ document.addEventListener('click',ev=>{
   else if(a==='rmfunc'){const ar=areaById(id),snap=clone(S),f=ar.f[+v];ar.f.splice(+v,1);commit();toast(f+' removida',snap)}
   else if(a==='addarea'){const n=$('narea').value.trim();if(!n){$('narea').focus();return}S.cfg.areas.push({id:uid(),n,f:[]});commit();toast('Área '+n+' criada')}
   else if(a==='sub'){teamSub=v;adding=false;editing=null;render()}
-  else if(a==='copypix'){const e=extraById(id);if(e&&e.pix)(navigator.clipboard?navigator.clipboard.writeText(e.pix):Promise.reject()).then(()=>toast('Pix de '+e.n+' copiado')).catch(()=>toast('Pix: '+e.pix))}
+  else if(a==='copypix'){const e=pessoaById(id);if(e&&e.pix)(navigator.clipboard?navigator.clipboard.writeText(e.pix):Promise.reject()).then(()=>toast('Pix de '+e.n+' copiado')).catch(()=>toast('Pix: '+e.pix))}
   else if(a==='goadd'){tab='team';sheet='';adding=true;addKind=v||'fixo';teamSub=addKind==='extra'?'extras':'equipe';editing=null;render();window.scrollTo(0,0);setTimeout(()=>$('nn')&&$('nn').focus(),0)}
   else if(a==='kind'){const n=$('nn').value,r=$('nr').value;addKind=v;render();$('nn').value=n;$('nr').value=r}
   else if(a==='cancel'){adding=false;render()}
@@ -819,12 +821,12 @@ document.addEventListener('click',ev=>{
   else if(a==='add'){const n=$('nn').value.trim();if(!n){$('nn').focus();toast('Escreva o nome');return}
     const r=$('nr').value.trim(),ar=$('na').value,box=b.closest('.addbox');
     if(!ar){$('na').focus();toast('Escolha a área');return}
-    if(addKind==='fixo')S.fixos.push({id:uid(),n,r,a:ar,fw:[...box.querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v)});
+    if(addKind==='fixo')S.fixos.push({id:uid(),n,r,a:ar,pix:$('np')?$('np').value.trim():'',fw:[...box.querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v)});
     else S.extras.push({id:uid(),n,r,a:ar,t:$('nt')?$('nt').value.trim():'',pix:$('np')?$('np').value.trim():''});
     adding=false;commit();toast(n+' adicionado')}
   else if(a==='edit'){editing=editing===id?null:id;adding=false;render()}
   else if(a==='savep'){const L=v==='fixo'?S.fixos:S.extras,p=L.find(x=>x.id===id);if(!p)return;const n=$('en').value.trim();if(!n){$('en').focus();return}
-    p.n=n;p.r=$('er').value.trim();p.a=$('ea').value;if(v==='extra'){p.t=$('et').value.trim();p.pix=$('ep').value.trim()}else p.fw=[...b.closest('.pform').querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v);
+    p.n=n;p.r=$('er').value.trim();p.a=$('ea').value;if(v==='extra'){p.t=$('et').value.trim();p.pix=$('ep').value.trim()}else{p.pix=$('ep').value.trim();p.fw=[...b.closest('.pform').querySelectorAll('[data-a=fw].on')].map(x=>+x.dataset.v)}
     editing=null;commit();toast('Alterações salvas')}
   else if(a==='rm'){const snap=clone(S),L=v==='fixo'?'fixos':'extras',p=S[L].find(x=>x.id===id);S[L]=S[L].filter(x=>x.id!==id);editing=null;commit();toast((p?p.n:'Pessoa')+' removido',snap)}
   else if(a==='logout')signOut(auth);
